@@ -2,20 +2,29 @@ server:
   port: 8080
 spring:
   application:
-    name: demo_mvc
+    name: demobootall
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/demo-spring-cloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false
-    username: root
-    password: root
-  redis:
-    host: localhost
-    port: 6379
+    driver-class-name: org.h2.Driver
+#    schema: classpath:db/schema.sql #，每次启动程序，程序都会运行schema.sql文件，对数据库的数据操作
+#    data: classpath:db/data.sql #，每次启动程序，程序都会运行data.sql文件，对数据库的数据操作
+    url: jdbc:h2:mem:test;mode=mysql #配置h2数据库的连接地址
+    username: sa
+    password: sa
+  h2:
+    console:
+      enabled: true #开启web console功能
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://192.168.3.21:3306/demo-spring-cloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false
+#    username: root
+#    password: root
+#  redis:
+#    host: 192.168.3.21
+#    port: 6379
   mvc:
     throw-exception-if-no-handler-found: true
   messages:
     basename: messages
     encoding: UTF-8
 
-mybatis-plus:
-  mapper-locations: classpath:mapper/*.xml
+mybatis:
+  mapper-locations: mapper/*.xml

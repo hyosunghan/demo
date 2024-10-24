@@ -13,6 +13,7 @@ spring:
   h2:
     console:
       enabled: true #开启web console功能
+      path: /h2-console
 #    driver-class-name: com.mysql.cj.jdbc.Driver
 #    url: jdbc:mysql://192.168.3.21:3306/demo-spring-cloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false
 #    username: root

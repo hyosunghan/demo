@@ -1,11 +1,11 @@
 package com.example.demo.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.example.demo.entity.Blog;
+import com.example.demo.entity.User;
 
 import java.util.List;
 
-public interface BlogService extends IService<Blog> {
+public interface UserService extends IService<User> {
 
-    List<Blog> testMapper();
+    List<User> testMapper();
 }

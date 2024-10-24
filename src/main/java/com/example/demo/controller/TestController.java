@@ -1,8 +1,7 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.Result;
-import com.example.demo.entity.Blog;
-import com.example.demo.service.BlogService;
+import com.example.demo.entity.User;
+import com.example.demo.service.UserService;
 import com.example.demo.service.TestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,11 +18,11 @@ public class TestController {
     private TestService testService;
 
     @Autowired
-    private BlogService blogService;
+    private UserService userService;
 
     @GetMapping("/test")
     public Object test() {
-        List<Blog> list = blogService.testMapper();
+        List<User> list = userService.testMapper();
         return list;
     }
 

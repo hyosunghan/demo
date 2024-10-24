@@ -52,21 +52,21 @@ public class DemoServiceApplication implements ApplicationRunner {
 		long l2 = System.currentTimeMillis();
 		log.info("查询并更新{}数据，耗时{}毫秒。。。", limit * page, l2 - l1); // 77.5s
 
-		List<List<String[]>> pageCollect = IntStream.range(0, page).parallel().mapToObj(p -> {
-			String selectSql = String.format("SELECT * FROM users LIMIT %s,%s", p * limit, limit);
-			return executeQuery(connection, selectSql);
-		}).collect(Collectors.toList());
-		pageCollect.parallelStream().forEach(pageResult -> {
-			String ids = pageResult.parallelStream().map(line -> line[0])
-					.collect(Collectors.joining(",", "(", ")"));
-			String deleteSql = String.format("DELETE FROM users WHERE id in %s;", ids);
+		IntStream.range(0, page).parallel().mapToObj(p -> {
+			String selectSql = String.format("SELECT id FROM users ORDER BY id ASC LIMIT %s,%s;", p * limit, limit);
+			List<String[]> pageIds = executeQuery(connection, selectSql);
+			return new Long[]{Long.valueOf(pageIds.get(0)[0]), Long.valueOf(pageIds.get(pageIds.size() - 1)[0])};
+		}).collect(Collectors.toList()).parallelStream().forEach(idRange -> {
+			String selectSql = String.format("SELECT * FROM users WHERE id BETWEEN %s AND %s;", idRange[0], idRange[1]);
+			List<String[]> pageResult = executeQuery(connection, selectSql);
+			String deleteSql = String.format("DELETE FROM users WHERE id BETWEEN %s AND %s;", idRange[0], idRange[1]);
 			execute(connection, deleteSql);
 			String values = pageResult.parallelStream().map(line ->
 							String.format("(%s, '%s', '%s')", line[0], EncryptCommon.encrypt(line[1]), line[2]))
 					.collect(Collectors.joining(","));
 			String insertSql = String.format("INSERT INTO users (id, username, password) VALUES %s;", values);
 			execute(connection, insertSql);
-			log.info("查询并删除并重写");
+			log.info("查询并删除并重写{}-{}", idRange[0], idRange[1]);
 		});
 		long l3 = System.currentTimeMillis();
 		log.info("查询并删除并重写{}数据，耗时{}毫秒。。。", limit * page, l3 - l2); // 3.5s

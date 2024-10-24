@@ -1,13 +1,17 @@
 package com.example.demo.interceptor;
 
+import cn.hutool.crypto.SecureUtil;
+
 public class EncryptCommon {
 
+    private static final String KEY = "1qaz@WSX3edc$RFV";
+
     public static String encrypt(String data) {
-        return data + "****";
+        return SecureUtil.aes(KEY.getBytes()).encryptHex(data);
     }
 
     public static String decrypt(String data) {
-        return data.replace("****", "");
+        return SecureUtil.aes(KEY.getBytes()).decryptStr(data);
     }
 
     public static boolean matchClass(String className) {

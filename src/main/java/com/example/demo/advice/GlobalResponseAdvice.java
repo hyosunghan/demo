@@ -36,7 +36,6 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
         if (o instanceof Result) {
             result = JsonUtil.writeObjectAsObject(o, Result.class);
         } else {
-            log.warn("国际化时自动统一结构");
             result = Result.success(o);
         }
         String message = result.getMessage();

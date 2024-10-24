@@ -1,5 +1,6 @@
 package com.example.demo.interceptor;
 
+import cn.hutool.core.util.DesensitizedUtil;
 import org.apache.ibatis.executor.resultset.ResultSetHandler;
 import org.apache.ibatis.plugin.*;
 import org.springframework.stereotype.Component;
@@ -52,7 +53,8 @@ public class ResultInterceptor implements Interceptor {
                     Object object = field.get(result);
                     if (object instanceof String) {
                         String value = (String) object;
-                        field.set(result, EncryptCommon.decrypt(value));
+                        String decrypt = EncryptCommon.decrypt(value);
+                        field.set(result, DesensitizedUtil.password(decrypt));
                     }
                 }
             }

@@ -18,6 +18,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NullPointerException.class)
     public Result<?> handleNullPointerException(NullPointerException e) {
         log.error("空指针异常");
+        e.printStackTrace();
         return Result.failure(500, "failure.message");
     }
 

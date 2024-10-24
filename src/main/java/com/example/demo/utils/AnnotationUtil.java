@@ -43,7 +43,7 @@ public class AnnotationUtil {
                 method = joinPoint.getTarget().getClass().getDeclaredMethod(signature.getName(),
                         method.getParameterTypes());
             } catch (Exception e) {
-                log.error("join point get method exception: ", e);
+                e.printStackTrace();
             }
         }
         return method;

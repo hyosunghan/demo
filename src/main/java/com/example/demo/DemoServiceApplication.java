@@ -39,24 +39,31 @@ public class DemoServiceApplication implements ApplicationRunner {
 		long l1 = System.currentTimeMillis();
 		log.info("新增{}数据，耗时{}毫秒。。。", limit * page, l1 - l); // 0.9s
 
-		IntStream.range(0, 1000).parallel().forEach(p -> {
+		List<String[]> strings = executeQuery(connection, "select count(1) from users");
+		int count = Integer.parseInt(strings.get(0)[0]);
+		page = (count / limit) + (count % limit == 0 ? 0 : 1);
+		long l2 = System.currentTimeMillis();
+		log.info("总数{}条, {}页", count, page);
+
+		int sum1 = IntStream.range(0, page).parallel().map(p -> {
 			String selectSql = String.format("SELECT * FROM users LIMIT %s,%s", p * limit, limit);
 			List<String[]> pageResult = executeQuery(connection, selectSql);
 			String updateItem = "UPDATE users SET username='%s', password='%s' WHERE id=%s;";
 			String updateSql = pageResult.parallelStream().map(line ->
-					String.format(updateItem, EncryptCommon.encrypt(line[1]), line[2], line[0]))
+							String.format(updateItem, EncryptCommon.encrypt(line[1]), line[2], line[0]))
 					.collect(Collectors.joining());
 			execute(connection, updateSql);
-			log.info("查询并更新第{}页", p);
-		});
-		long l2 = System.currentTimeMillis();
-		log.info("查询并更新{}数据，耗时{}毫秒。。。", limit * page, l2 - l1); // 77.5s
+			log.info("查询并更新第{}页{}条", p, pageResult.size());
+			return pageResult.size();
+		}).sum();
+		long l3 = System.currentTimeMillis();
+		log.info("查询并更新{}条数据，耗时{}毫秒。。。", sum1, l3 - l2); // 41.3s
 
-		IntStream.range(0, page).parallel().mapToObj(p -> {
+		int sum2 = IntStream.range(0, page).parallel().mapToObj(p -> {
 			String selectSql = String.format("SELECT id FROM users ORDER BY id ASC LIMIT %s,%s;", p * limit, limit);
 			List<String[]> pageIds = executeQuery(connection, selectSql);
 			return new Long[]{Long.valueOf(pageIds.get(0)[0]), Long.valueOf(pageIds.get(pageIds.size() - 1)[0])};
-		}).collect(Collectors.toList()).parallelStream().forEach(idRange -> {
+		}).collect(Collectors.toList()).parallelStream().mapToInt(idRange -> {
 			String selectSql = String.format("SELECT * FROM users WHERE id BETWEEN %s AND %s;", idRange[0], idRange[1]);
 			List<String[]> pageResult = executeQuery(connection, selectSql);
 			String deleteSql = String.format("DELETE FROM users WHERE id BETWEEN %s AND %s;", idRange[0], idRange[1]);
@@ -66,10 +73,11 @@ public class DemoServiceApplication implements ApplicationRunner {
 					.collect(Collectors.joining(","));
 			String insertSql = String.format("INSERT INTO users (id, username, password) VALUES %s;", values);
 			execute(connection, insertSql);
-			log.info("查询并删除并重写{}-{}", idRange[0], idRange[1]);
-		});
-		long l3 = System.currentTimeMillis();
-		log.info("查询并删除并重写{}数据，耗时{}毫秒。。。", limit * page, l3 - l2); // 3.5s
+			log.info("查询并删除并重写{}-{}区间{}条", idRange[0], idRange[1], pageResult.size());
+			return pageResult.size();
+		}).sum();
+		long l4 = System.currentTimeMillis();
+		log.info("查询并删除重写{}条数据，耗时{}毫秒。。。", sum2, l4 - l3); // 3.6s
 
 		connection.close();
 	}

@@ -1,10 +1,7 @@
 package com.example.demo.interceptor;
 
 import org.apache.ibatis.executor.resultset.ResultSetHandler;
-import org.apache.ibatis.plugin.Interceptor;
-import org.apache.ibatis.plugin.Intercepts;
-import org.apache.ibatis.plugin.Invocation;
-import org.apache.ibatis.plugin.Signature;
+import org.apache.ibatis.plugin.*;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
@@ -37,7 +34,7 @@ public class ResultInterceptor implements Interceptor {
 
     @Override
     public Object plugin(Object o) {
-        return null;
+        return Plugin.wrap(o, this);
     }
 
     @Override

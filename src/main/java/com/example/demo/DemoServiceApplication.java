@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -24,26 +25,32 @@ public class DemoServiceApplication implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		int limit = 1000;
-		int page = 100;
+		int page = 10;
+		String table = "users";
 		Connection conn = DriverManager.getConnection("jdbc:h2:mem:test;mode=mysql", "sa", "sa");
+
+		String[] construct = constructQuery(conn, String.format("SELECT * from %s;", table));
+		log.info("Query [{}] columns: [{}].", table, String.join(",", construct));
 		long l = System.currentTimeMillis();
 
 		IntStream.range(0, page).parallel().forEach(p -> {
-			String values = IntStream.range(0, limit).parallel().mapToObj(i -> {
-				String username = String.valueOf(System.currentTimeMillis());
-				return String.format("('%s', '%s')", username, EncryptCommon.encrypt(username));
-			}).collect(Collectors.joining(","));
-			String insertSql = String.format("INSERT INTO users (username, password) VALUES %s;", values);
-			execute(conn, insertSql);
+			String columns = Arrays.stream(construct, 1, construct.length)
+					.collect(Collectors.joining(",", "(", ")"));
+			String values = IntStream.range(0, limit).parallel().mapToObj(r ->
+					IntStream.range(1, construct.length).mapToObj(c ->
+							String.valueOf(System.currentTimeMillis())
+					).collect(Collectors.joining("','", "('", "')"))
+			).collect(Collectors.joining(","));
+			execute(conn, String.format("INSERT INTO %s %s VALUES %s;", table, columns, values));
 		});
 		long l1 = System.currentTimeMillis();
-		log.info("Insert {} rows data, cost time {} ms.", limit * page, l1 - l);
+		log.info("Insert [{}] {} rows, cost time {} ms.", table, limit * page, l1 - l);
 
-		List<String[]> strings = executeQuery(conn, "select count(1) from users");
+		List<String[]> strings = executeQuery(conn, String.format("select count(1) from %s;", table));
 		int count = Integer.parseInt(strings.get(0)[0]);
 		page = (count / limit) + (count % limit == 0 ? 0 : 1);
 		long l2 = System.currentTimeMillis();
-		log.info("Count data {} rows, {} pages.", count, page);
+		log.info("Count [{}] {} rows, split {} pages.", table, count, page);
 
 		int sum1 = IntStream.range(0, page).parallel().map(p -> {
 			String selectSql = String.format("SELECT * FROM users LIMIT %s,%s", p * limit, limit);
@@ -81,6 +88,26 @@ public class DemoServiceApplication implements ApplicationRunner {
 
 		conn.close();
 	}
+
+	private String[] constructQuery(Connection connection, String selectSql) {
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement(selectSql);
+			ResultSet resultSet = preparedStatement.executeQuery();
+			ResultSetMetaData metaData = resultSet.getMetaData();
+			int columnCount = metaData.getColumnCount();
+			String[] columnArray = new String[columnCount];
+			for (int dbIndex = 0, index = 1; dbIndex < columnCount; dbIndex++) {
+				if (metaData.isAutoIncrement(dbIndex + 1)) {
+					columnArray[0] = metaData.getColumnName(dbIndex + 1);
+				} else {
+					columnArray[index++] = metaData.getColumnName(dbIndex + 1);
+				}
+			}
+			return columnArray;
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+    }
 
 	private static List<String[]> executeQuery(Connection connection, String selectSql) {
 		ArrayList<String[]> pageResult = new ArrayList<>();

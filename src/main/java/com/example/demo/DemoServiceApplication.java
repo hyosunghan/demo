@@ -37,13 +37,13 @@ public class DemoServiceApplication implements ApplicationRunner {
 			execute(conn, insertSql);
 		});
 		long l1 = System.currentTimeMillis();
-		log.info("新增{}数据，耗时{}毫秒。。。", limit * page, l1 - l);
+		log.info("Insert {} rows data, cost time {} ms.", limit * page, l1 - l);
 
 		List<String[]> strings = executeQuery(conn, "select count(1) from users");
 		int count = Integer.parseInt(strings.get(0)[0]);
 		page = (count / limit) + (count % limit == 0 ? 0 : 1);
 		long l2 = System.currentTimeMillis();
-		log.info("总数{}条, {}页", count, page);
+		log.info("Count data {} rows, {} pages.", count, page);
 
 		int sum1 = IntStream.range(0, page).parallel().map(p -> {
 			String selectSql = String.format("SELECT * FROM users LIMIT %s,%s", p * limit, limit);
@@ -53,11 +53,11 @@ public class DemoServiceApplication implements ApplicationRunner {
 							String.format(updateItem, EncryptCommon.encrypt(line[1]), line[2], line[0]))
 					.collect(Collectors.joining());
 			execute(conn, updateSql);
-			log.info("查询并更新第{}页{}条", p, pageResult.size());
+			log.info("Query and update {} th page, include {} rows.", p, pageResult.size());
 			return pageResult.size();
 		}).sum();
 		long l3 = System.currentTimeMillis();
-		log.info("查询并更新{}条数据，耗时{}毫秒。。。", sum1, l3 - l2);
+		log.info("Query and update {} rows data, cost time {} ms.", sum1, l3 - l2);
 
 		int sum2 = IntStream.range(0, page).parallel().mapToObj(p -> {
 			String selectSql = String.format("SELECT id FROM users ORDER BY id ASC LIMIT %s,%s;", p * limit, limit);
@@ -73,11 +73,11 @@ public class DemoServiceApplication implements ApplicationRunner {
 					.collect(Collectors.joining(","));
 			String insertSql = String.format("INSERT INTO users (id, username, password) VALUES %s;", values);
 			execute(conn, insertSql);
-			log.info("查询并删除并重写{}-{}区间{}条", range[0], range[1], pageResult.size());
+			log.info("Query and delete and insert range [{},{}], include {} rows.", range[0], range[1], pageResult.size());
 			return pageResult.size();
 		}).sum();
 		long l4 = System.currentTimeMillis();
-		log.info("查询并删除重写{}条数据，耗时{}毫秒。。。", sum2, l4 - l3);
+		log.info("Query and delete and insert {} rows data, cost {} ms.", sum2, l4 - l3);
 
 		conn.close();
 	}

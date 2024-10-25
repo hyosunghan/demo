@@ -26,65 +26,62 @@ public class DemoServiceApplication implements ApplicationRunner {
 	public void run(ApplicationArguments args) throws Exception {
 		int limit = 1000;
 		int page = 10;
-		String table = "users";
+		String table = "USERS";
 		Connection conn = DriverManager.getConnection("jdbc:h2:mem:test;mode=mysql", "sa", "sa");
 
 		String[] construct = constructQuery(conn, String.format("SELECT * from %s;", table));
-		log.info("Query [{}] columns: [{}].", table, String.join(",", construct));
+		String spliceColumns = Arrays.stream(construct, 0, construct.length).collect(Collectors.joining(","));
 		long l = System.currentTimeMillis();
+		log.info("查询表[{}]列：[{}]。", table, String.join(",", construct));
 
 		IntStream.range(0, page).parallel().forEach(p -> {
-			String columns = Arrays.stream(construct, 1, construct.length)
-					.collect(Collectors.joining(",", "(", ")"));
+			String columns = Arrays.stream(construct, 1, construct.length).collect(Collectors.joining(",", "(", ")"));
 			String values = IntStream.range(0, limit).parallel().mapToObj(r ->
-					IntStream.range(1, construct.length).mapToObj(c ->
-							String.valueOf(System.currentTimeMillis())
-					).collect(Collectors.joining("','", "('", "')"))
+					IntStream.range(1, construct.length).mapToObj(c -> EncryptCommon.encrypt("0000")).collect(Collectors.joining("','", "('", "')"))
 			).collect(Collectors.joining(","));
 			execute(conn, String.format("INSERT INTO %s %s VALUES %s;", table, columns, values));
 		});
 		long l1 = System.currentTimeMillis();
-		log.info("Insert [{}] {} rows, cost time {} ms.", table, limit * page, l1 - l);
+		log.info("插入表[{}]数据{}条, 耗时{}毫秒。", table, limit * page, l1 - l);
 
 		List<String[]> strings = executeQuery(conn, String.format("select count(1) from %s;", table));
 		int count = Integer.parseInt(strings.get(0)[0]);
 		page = (count / limit) + (count % limit == 0 ? 0 : 1);
 		long l2 = System.currentTimeMillis();
-		log.info("Count [{}] {} rows, split {} pages.", table, count, page);
+		log.info("计数表[{}]数据{}条，分为{}页。", table, count, page);
 
 		int sum1 = IntStream.range(0, page).parallel().map(p -> {
-			String selectSql = String.format("SELECT * FROM users LIMIT %s,%s", p * limit, limit);
-			List<String[]> pageResult = executeQuery(conn, selectSql);
-			String updateItem = "UPDATE users SET username='%s', password='%s' WHERE id=%s;";
-			String updateSql = pageResult.parallelStream().map(line ->
-							String.format(updateItem, EncryptCommon.encrypt(line[1]), line[2], line[0]))
-					.collect(Collectors.joining());
+			List<String[]> pageResult = executeQuery(conn, String.format("SELECT %s FROM %s LIMIT %s,%s", spliceColumns, table, p * limit, limit));
+			String updateSql = pageResult.parallelStream().map(line -> {
+				String values = IntStream.range(1, construct.length).mapToObj(i -> String.format("%s='%s'", construct[i], EncryptCommon.encrypt("1111"))).collect(Collectors.joining(","));
+				return String.format("UPDATE %s SET %s WHERE %s=%s;", table, values, construct[0], line[0]);
+			}).collect(Collectors.joining());
 			execute(conn, updateSql);
-			log.info("Query and update {} th page, include {} rows.", p, pageResult.size());
+			log.info("查询并更新表[{}]第{}页, 包含{}条。", table, p, pageResult.size());
 			return pageResult.size();
 		}).sum();
 		long l3 = System.currentTimeMillis();
-		log.info("Query and update {} rows data, cost time {} ms.", sum1, l3 - l2);
+		log.info("查询并更新表[{}]数据{}条，耗时{}毫秒。", table, sum1, l3 - l2);
 
 		int sum2 = IntStream.range(0, page).parallel().mapToObj(p -> {
-			String selectSql = String.format("SELECT id FROM users ORDER BY id ASC LIMIT %s,%s;", p * limit, limit);
-			List<String[]> pageIds = executeQuery(conn, selectSql);
+			List<String[]> pageIds = executeQuery(conn, String.format("SELECT %s FROM %s ORDER BY %s ASC LIMIT %s,%s;", construct[0], table, construct[0], p * limit, limit));
 			return new Long[]{Long.valueOf(pageIds.get(0)[0]), Long.valueOf(pageIds.get(pageIds.size() - 1)[0])};
 		}).collect(Collectors.toList()).parallelStream().mapToInt(range -> {
-			String selectSql = String.format("SELECT * FROM users WHERE id BETWEEN %s AND %s;", range[0], range[1]);
+			String selectSql = String.format("SELECT %s FROM %s WHERE %s BETWEEN %s AND %s;", spliceColumns, table, construct[0], range[0], range[1]);
 			List<String[]> pageResult = executeQuery(conn, selectSql);
-			String deleteSql = String.format("DELETE FROM users WHERE id BETWEEN %s AND %s;", range[0], range[1]);
+			String deleteSql = String.format("DELETE FROM %s WHERE %s BETWEEN %s AND %s;", table, construct[0], range[0], range[1]);
 			execute(conn, deleteSql);
-			String values = pageResult.parallelStream().map(line ->
-							String.format("(%s, '%s', '%s')", line[0], EncryptCommon.encrypt(line[1]), line[2]))
-					.collect(Collectors.joining(","));
-			String insertSql = String.format("INSERT INTO users (id, username, password) VALUES %s;", values);
+			String values = pageResult.parallelStream().map(r -> {
+				String otherValues = IntStream.range(1, construct.length).mapToObj(c -> EncryptCommon.encrypt("2222")).collect(Collectors.joining("','", "'", "'"));
+				return String.format("(%s,%s)", r[0], otherValues);
+			}).collect(Collectors.joining(","));
+			String insertSql = String.format("INSERT INTO %s (%s) VALUES %s;", table, spliceColumns, values);
 			execute(conn, insertSql);
-			log.info("Query and delete and insert range [{},{}], include {} rows.", range[0], range[1], pageResult.size());
+			log.info("查询并删除重写表[{}]主键区间[{},{}]，包含{}条。", table, range[0], range[1], pageResult.size());
 			return pageResult.size();
 		}).sum();
 		long l4 = System.currentTimeMillis();
-		log.info("Query and delete and insert {} rows data, cost {} ms.", sum2, l4 - l3);
+		log.info("查询并删除重写表[{}]数据{}条，耗时{}毫秒。", table, sum2, l4 - l3);
 
 		conn.close();
 	}

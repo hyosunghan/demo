@@ -48,7 +48,7 @@ public class ResultInterceptor implements Interceptor {
         if (EncryptCommon.matchClass(resultClass.getName())) {
             Field[] declaredFields = resultClass.getDeclaredFields();
             for (Field field : declaredFields) {
-                if (EncryptCommon.matchField(field.getName())) {
+                if (EncryptCommon.matchField(resultClass.getName(), field.getName())) {
                     field.setAccessible(true);
                     Object object = field.get(result);
                     if (object instanceof String) {

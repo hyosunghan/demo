@@ -2,7 +2,13 @@ package com.example.demo.interceptor;
 
 import cn.hutool.crypto.SecureUtil;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 public class EncryptCommon {
+
+    public static final Map<String, Set<String>> CUSTOM_PROPERTY_MAP = new HashMap<>();
 
     private static final String KEY = "1qaz@WSX3edc$RFV";
 
@@ -15,10 +21,10 @@ public class EncryptCommon {
     }
 
     public static boolean matchClass(String className) {
-        return "com.example.demo.entity.User".equals(className);
+        return CUSTOM_PROPERTY_MAP.containsKey(className);
     }
 
-    public static boolean matchField(String fieldName) {
-        return "password".equals(fieldName);
+    public static boolean matchField(String className, String fieldName) {
+        return CUSTOM_PROPERTY_MAP.get(className).contains(fieldName);
     }
 }

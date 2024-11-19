@@ -25,7 +25,7 @@ public class ParamInterceptor implements Interceptor {
                 if (EncryptCommon.matchClass(parameterObjectClass.getName())) {
                     Field[] declaredFields = parameterObjectClass.getDeclaredFields();
                     for (Field field : declaredFields) {
-                        if (EncryptCommon.matchField(field.getName())) {
+                        if (EncryptCommon.matchField(parameterObjectClass.getName(), field.getName())) {
                             field.setAccessible(true);
                             Object object = field.get(parameterObject);
                             if (object instanceof String) {

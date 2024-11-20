@@ -27,5 +27,6 @@ spring:
     basename: messages
     encoding: UTF-8
 
-mybatis-plus:
-  mapper-locations: mapper/*.xml
+mybatis:
+  type-aliases-package: com.example.demo.entity
+  mapper-locations: classpath:mapper/*.xml

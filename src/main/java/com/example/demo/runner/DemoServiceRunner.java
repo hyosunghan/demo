@@ -5,6 +5,7 @@ import com.example.demo.interceptor.EncryptCommon;
 import com.example.demo.utils.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,9 @@ import java.util.stream.IntStream;
 @Component
 public class DemoServiceRunner implements ApplicationRunner {
 
+	@Value("${mybatis.type-aliases-package}")
+	private String entityPackage;
+
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		scannerCustomInfo();
@@ -35,8 +39,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private void scannerCustomInfo() {
-		String packageName = "com.example.demo.entity";
-		Reflections reflections = new Reflections(packageName);
+		Reflections reflections = new Reflections(entityPackage);
 		Set<Class<?>> customClassSet = reflections.getTypesAnnotatedWith(CustomerInfo.class);
 		for (Class<?> clazz : customClassSet) {
 			HashSet<String> propertySet = new HashSet<>();

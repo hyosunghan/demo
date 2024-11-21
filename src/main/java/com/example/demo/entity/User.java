@@ -19,4 +19,7 @@ public class User implements Serializable {
 
     @CustomerInfo
     private String password;
+
+    @CustomerInfo
+    private String phoneNumber;
 }

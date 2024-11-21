@@ -30,7 +30,8 @@ public class ParamInterceptor implements Interceptor {
                             Object object = field.get(parameterObject);
                             if (object instanceof String) {
                                 String value = (String) object;
-                                field.set(parameterObject, EncryptCommon.encrypt(value));
+                                String encrypt = EncryptCommon.encrypt(value);
+                                field.set(parameterObject, encrypt);
                             }
                         }
                     }

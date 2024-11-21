@@ -54,10 +54,21 @@ public class ResultInterceptor implements Interceptor {
                     if (object instanceof String) {
                         String value = (String) object;
                         String decrypt = EncryptCommon.decrypt(value);
-                        field.set(result, DesensitizedUtil.password(decrypt));
+                        decrypt = desensitize(field.getName(), decrypt);
+                        field.set(result, decrypt);
                     }
                 }
             }
         }
+    }
+
+    private String desensitize(String fieldName, String value) {
+        if ("phoneNumber".equals(fieldName)) {
+            return DesensitizedUtil.mobilePhone(value);
+        }
+        if ("password".equals(fieldName)) {
+            return DesensitizedUtil.password(value);
+        }
+        return null;
     }
 }

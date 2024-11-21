@@ -5,12 +5,17 @@ import com.example.demo.interceptor.EncryptCommon;
 import com.example.demo.utils.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -32,10 +37,35 @@ public class DemoServiceRunner implements ApplicationRunner {
 	@Value("${mybatis.type-aliases-package}")
 	private String entityPackage;
 
+	@Value("${spring.datasource.url}")
+	private String dbUrl;
+
+	@Value("${spring.datasource.username}")
+	private String dbUsername;
+
+	@Value("${spring.datasource.password}")
+	private String dbPassword;
+
+	@Autowired
+	private ServerProperties serverProperties;
+
+	@Autowired
+	private Environment environment;
+
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		scannerCustomInfo();
+		consoleEnvironment();
 //		testInsertAndUpdate();
+	}
+
+	private void consoleEnvironment() throws UnknownHostException {
+		String host = InetAddress.getLocalHost().getHostAddress();
+		Integer port = serverProperties.getPort();
+		String context = serverProperties.getServlet().getContextPath();
+		String path = environment.getProperty("spring.h2.console.path");
+		String h2console = "http://" + host + ":" + port + context + path;
+		log.info("H2 console: " + h2console);
 	}
 
 	private void scannerCustomInfo() {
@@ -56,8 +86,8 @@ public class DemoServiceRunner implements ApplicationRunner {
 	private void testInsertAndUpdate() throws SQLException {
 		int limit = 1000;
 		int page = 10;
-		String table = "USERS";
-		Connection conn = DriverManager.getConnection("jdbc:h2:mem:test;mode=mysql", "sa", "sa");
+		String table = "USER";
+		Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
 
 		String[] construct = constructQuery(conn, String.format("SELECT * from %s;", table));
 		String spliceColumns = Arrays.stream(construct, 0, construct.length).collect(Collectors.joining(","));

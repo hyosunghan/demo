@@ -4,7 +4,6 @@ import com.example.demo.sdk.IPlatformService;
 import com.example.demo.sdk.dto.AuthRequest;
 import com.example.demo.sdk.dto.AuthResponse;
 import com.example.demo.sdk.dto.BaseRequest;
-import com.example.demo.utils.RestUtil;
 import org.springframework.beans.factory.annotation.Value;
 
 public class _1688IPlatformServiceImpl implements IPlatformService {
@@ -20,8 +19,6 @@ public class _1688IPlatformServiceImpl implements IPlatformService {
 
     @Override
     public String getAuthUrl(BaseRequest baseRequest) {
-        String s = RestUtil.get("https://www.baidu.com", String.class);
-        System.out.println(s);
         return "https://auth.1688.com/oauth/authorize?client_id=" + appId + "&site=1688&redirect_uri=" + redirectUrl
                 + "&state=" + System.currentTimeMillis();
     }

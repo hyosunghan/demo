@@ -2,6 +2,9 @@ package com.example.demo.runner;
 
 import com.example.demo.annotation.CustomerInfo;
 import com.example.demo.interceptor.EncryptCommon;
+import com.example.demo.sdk.IPlatformService;
+import com.example.demo.sdk.dto.BaseRequest;
+import com.example.demo.sdk.dto.PlatformEnum;
 import com.example.demo.utils.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
@@ -52,11 +55,21 @@ public class DemoServiceRunner implements ApplicationRunner {
 	@Autowired
 	private Environment environment;
 
+	@Autowired
+	private IPlatformService platformService;
+
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		scannerCustomInfo();
 		consoleEnvironment();
 //		testInsertAndUpdate();
+		testSdk();
+	}
+
+	private void testSdk() {
+		BaseRequest baseRequest = new BaseRequest();
+		baseRequest.setPlatform(PlatformEnum._1688);
+		String authUrl = platformService.getAuthUrl(baseRequest);
 	}
 
 	private void consoleEnvironment() throws UnknownHostException {

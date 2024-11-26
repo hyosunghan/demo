@@ -29,6 +29,22 @@ spring:
     basename: messages
     encoding: UTF-8
 
+# mybatis配置
 mybatis:
   type-aliases-package: com.example.demo.entity
   mapper-locations: classpath:mapper/*.xml
+
+# 线程池配置
+task:
+  executor:
+    pool:
+      size: 10
+    queue:
+      size: 10000
+
+# 三方平台配置
+platform:
+  1688:
+    app-id: 111
+    app-secret: 222
+    redirect-url: www.1688.com

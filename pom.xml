@@ -61,6 +61,14 @@
             <artifactId>reflections</artifactId>
             <version>0.10.2</version>
         </dependency>
+        <!-- 1688sdk -->
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>ocean.client.java.biz.jar</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/ocean.client.java.biz.jar</systemPath>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

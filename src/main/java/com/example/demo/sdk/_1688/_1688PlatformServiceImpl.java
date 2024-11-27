@@ -3,7 +3,7 @@ package com.example.demo.sdk._1688;
 import com.example.demo.sdk.BasePlatformServiceImpl;
 import org.springframework.beans.factory.annotation.Value;
 
-public class _1688IPlatformServiceImpl extends BasePlatformServiceImpl {
+public class _1688PlatformServiceImpl extends BasePlatformServiceImpl {
 
     @Value("${platform.1688.app-id}")
     private String appId;

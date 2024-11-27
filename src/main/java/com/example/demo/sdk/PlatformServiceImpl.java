@@ -1,6 +1,6 @@
 package com.example.demo.sdk;
 
-import com.example.demo.sdk._1688._1688IPlatformServiceImpl;
+import com.example.demo.sdk._1688._1688PlatformServiceImpl;
 import com.example.demo.sdk.dto.AuthRequest;
 import com.example.demo.sdk.dto.AuthResponse;
 import com.example.demo.sdk.dto.PlatformEnum;
@@ -17,7 +17,7 @@ public class PlatformServiceImpl implements IPlatformService {
     private static final Map<PlatformEnum, IPlatformService> platformServiceMap = new HashMap<>();
 
     static {
-        platformServiceMap.put(PlatformEnum._1688, new _1688IPlatformServiceImpl());
+        platformServiceMap.put(PlatformEnum._1688, new _1688PlatformServiceImpl());
     }
 
     @Override

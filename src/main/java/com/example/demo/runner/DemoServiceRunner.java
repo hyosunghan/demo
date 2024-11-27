@@ -3,7 +3,8 @@ package com.example.demo.runner;
 import com.example.demo.annotation.CustomerInfo;
 import com.example.demo.interceptor.EncryptCommon;
 import com.example.demo.sdk.IPlatformService;
-import com.example.demo.sdk.dto.BaseRequest;
+import com.example.demo.sdk.dto.AuthRequest;
+import com.example.demo.sdk.dto.AuthResponse;
 import com.example.demo.sdk.dto.PlatformEnum;
 import com.example.demo.utils.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -67,9 +68,10 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private void testSdk() {
-		BaseRequest baseRequest = new BaseRequest();
-		baseRequest.setPlatform(PlatformEnum._1688);
-		String authUrl = platformService.getAuthUrl(baseRequest);
+		AuthRequest authRequest = new AuthRequest();
+		authRequest.setPlatform(PlatformEnum._1688);
+		AuthResponse authResponse = platformService.refreshAccessToken(authRequest);
+		log.info("refreshAccessToken: {}", JsonUtil.writeValueAsString(authResponse));
 	}
 
 	private void consoleEnvironment() throws UnknownHostException {

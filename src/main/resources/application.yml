@@ -47,4 +47,3 @@ platform:
   1688:
     app-id: 111
     app-secret: 222
-    redirect-url: www.1688.com

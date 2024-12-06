@@ -14,10 +14,11 @@ import java.util.Map;
 @Service
 public class PlatformServiceImpl implements IPlatformService {
 
-    private static final Map<PlatformEnum, IPlatformService> platformServiceMap = new HashMap<>();
+    private final Map<PlatformEnum, IPlatformService> platformServiceMap;
 
-    static {
-        platformServiceMap.put(PlatformEnum._1688, new _1688PlatformServiceImpl());
+    public PlatformServiceImpl(PlatformProperties platformProperties) {
+        this.platformServiceMap = new HashMap<>();
+        platformServiceMap.put(PlatformEnum._1688, new _1688PlatformServiceImpl(platformProperties));
     }
 
     @Override

@@ -20,12 +20,6 @@ public @interface RedisLock {
     String name() default "lock";
 
     /**
-     * 锁的值
-     * @return
-     */
-    String value() default "0";
-
-    /**
      * 尝试加锁，最多等待时间
      * @return
      */

@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.entity.User;
 import com.example.demo.lock.annotation.RedisLock;
 import com.example.demo.lock.model.LockType;
 import lombok.extern.slf4j.Slf4j;
@@ -15,8 +16,8 @@ public class TestServiceImpl implements TestService {
     }
 
     @Override
-    @RedisLock(name = "wait", keys = {"#id"}, type = LockType.WAIT)
-    public void testWaitLock(Long id) {
+    @RedisLock(name = "WAIT", keys = {"#id", "#user.username"}, type = LockType.WAIT)
+    public void testWaitLock(Long id, User user) {
         try {
             log.info("等待逻辑开始");
             Thread.sleep(1000);
@@ -27,8 +28,8 @@ public class TestServiceImpl implements TestService {
     }
 
     @Override
-    @RedisLock(name = "exec", keys = {"#id"}, type = LockType.EXEC)
-    public void testExecLock(Long id) {
+    @RedisLock(name = "EXEC", keys = {"#id", "#user.username"}, type = LockType.EXEC)
+    public void testExecLock(Long id, User user) {
         try {
             log.info("执行逻辑开始");
             Thread.sleep(1000);

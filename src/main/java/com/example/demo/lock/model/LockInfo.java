@@ -11,14 +11,14 @@ import lombok.NoArgsConstructor;
 @Builder
 public class LockInfo {
 
-    private String lockName = "lock";
+    private String lockName;
 
-    private String lockValue = "0";
+    private String lockValue;
 
-    private Integer waitTime = 3;
+    private Integer waitTime;
 
-    private Integer leaseTime = 20;
+    private Integer leaseTime;
 
-    private Integer frequency = 4;
+    private Integer frequency;
 
 }

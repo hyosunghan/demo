@@ -28,15 +28,19 @@ public class TestController {
 
     @GetMapping("/testWait")
     public Object testWait() {
-        new Thread(()-> testService.testWaitLock(1L)).start();
-        new Thread(()-> testService.testWaitLock(1L)).start();
+        User user = new User();
+        user.setUsername("w");
+        new Thread(()-> testService.testWaitLock(1L, user)).start();
+        new Thread(()-> testService.testWaitLock(1L, user)).start();
         return 2;
     }
 
     @GetMapping("/testExec")
     public Object testExec() {
-        new Thread(() -> testService.testExecLock(2L)).start();
-        new Thread(() -> testService.testExecLock(2L)).start();
+        User user = new User();
+        user.setUsername("e");
+        new Thread(() -> testService.testExecLock(2L, user)).start();
+        new Thread(() -> testService.testExecLock(2L, user)).start();
         return 3;
     }
 }

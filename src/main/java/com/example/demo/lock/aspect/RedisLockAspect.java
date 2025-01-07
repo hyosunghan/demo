@@ -52,20 +52,10 @@ public class RedisLockAspect {
     @Around(value = "pointCut() && @annotation(redisLock)")
     public Object around(ProceedingJoinPoint point, RedisLock redisLock) throws Throwable {
         String lockName = redisLock.name() + getSpElDefinitionValue(point, redisLock.keys());
-        switch (redisLock.type()) {
-            case EXEC:
-                return exec(point, redisLock, lockName);
-            case WAIT:
-            default:
-                return wait(point, redisLock, lockName);
-        }
-    }
-
-    private Object wait(ProceedingJoinPoint point, RedisLock lockInfo, String lockName) throws Throwable  {
-        Callable<Boolean> callable = () -> waitResult(lockInfo, lockName);
+        Callable<Boolean> callable = () -> waitLock(redisLock, lockName);
         try {
             Future<Boolean> future = taskExecutor.submit(callable);
-            future.get(lockInfo.waitTime(), TimeUnit.SECONDS);
+            future.get(redisLock.waitTime(), TimeUnit.SECONDS);
             try {
                 return point.proceed();
             } catch (Exception e) {
@@ -78,9 +68,8 @@ public class RedisLockAspect {
         }
     }
 
-    private Boolean waitResult(RedisLock lockInfo, String lockName) {
+    private Boolean waitLock(RedisLock lockInfo, String lockName) {
         int i = 0;
-        int sleep = 1000 / lockInfo.frequency();
         do {
             try {
                 i++;
@@ -89,29 +78,12 @@ public class RedisLockAspect {
                 if (flag) {
                     return true;
                 }
-                Thread.sleep(sleep);
+                Thread.sleep(1000 / lockInfo.frequency());
             } catch (Exception e) {
                 log.error("获取锁出现异常：", e);
             }
-        } while (i < (lockInfo.waitTime() + 1) * lockInfo.frequency());
+        } while (i < lockInfo.waitTime() * lockInfo.frequency());
         return false;
-    }
-
-    private Object exec(ProceedingJoinPoint point, RedisLock lockInfo, String lockName) throws Throwable  {
-        boolean flag = redisSetNX(lockName, lockInfo.value(), lockInfo.leaseTime());
-        log.debug("尝试获取 {} 事务锁的结果为：{}", lockName, flag);
-        if (!flag) {
-            Long l = redisIncrement(lockName);
-            log.debug("未获取 {} 事务锁，自增结果为：{}", lockName, l);
-            throw new RuntimeException("获取锁失败");
-        }
-        try {
-            return point.proceed();
-        } finally {
-            String v = redisGet(lockName);
-            log.debug("{} 事务锁处理完成，处理过程中被拦截 {} 次！", lockName, v);
-            redisExpire(lockName);
-        }
     }
 
     public Boolean redisSetNX(String k, String v, Integer timeout) {
@@ -121,14 +93,6 @@ public class RedisLockAspect {
 
     private Boolean redisExpire(String k) {
         return stringRedisTemplate.expire(k, 0, TimeUnit.SECONDS);
-    }
-
-    private Long redisIncrement(String k) {
-        return stringRedisTemplate.opsForValue().increment(k, 1L);
-    }
-
-    public String redisGet(String k) {
-        return stringRedisTemplate.opsForValue().get(k);
     }
 
     public static String getSpElDefinitionValue(ProceedingJoinPoint joinPoint, String[] redisLockKeys) throws NoSuchMethodException {
@@ -142,8 +106,8 @@ public class RedisLockAspect {
         List<String> serviceKeys = new ArrayList<>();
         for (String serviceKey : redisLockKeys) {
             if (serviceKey != null && !serviceKey.isEmpty()) {
-                String string = parser.parseExpression(serviceKey).getValue(context).toString();
-                serviceKeys.add(string);
+                Object value = parser.parseExpression(serviceKey).getValue(context);
+                serviceKeys.add(value == null ? "" : value.toString());
             }
         }
         return serviceKeys.stream().collect(Collectors.joining(":", ":", ""));

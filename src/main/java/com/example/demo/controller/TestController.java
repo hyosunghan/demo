@@ -29,7 +29,7 @@ public class TestController {
     @GetMapping("/testWait")
     public Object testWait() {
         User user = new User();
-        user.setUsername("w");
+//        user.setUsername("w");
         new Thread(()-> testService.testWaitLock(1L, user)).start();
         new Thread(()-> testService.testWaitLock(1L, user)).start();
         return 2;

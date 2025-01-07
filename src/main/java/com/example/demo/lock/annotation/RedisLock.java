@@ -1,7 +1,5 @@
 package com.example.demo.lock.annotation;
 
-import com.example.demo.lock.model.LockType;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -42,12 +40,6 @@ public @interface RedisLock {
      * @return
      */
     int frequency() default 4;
-
-    /**
-     * 锁类型
-     * @return
-     */
-    LockType type() default LockType.WAIT;
 
     /**
      * 自定义业务key，spring EL 表达式形式，获取方法参数对应的值

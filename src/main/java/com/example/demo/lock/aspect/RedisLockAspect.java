@@ -21,7 +21,6 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Aspect
@@ -54,7 +54,12 @@ public class RedisLockAspect {
 
     @Around(value = "pointCut() && @annotation(redisLock)")
     public Object around(ProceedingJoinPoint point, RedisLock redisLock) throws Throwable {
-        LockInfo lockInfo = getLockInfo(point, redisLock);
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setFrequency(redisLock.frequency());
+        lockInfo.setLeaseTime(redisLock.leaseTime());
+        lockInfo.setWaitTime(redisLock.waitTime());
+        lockInfo.setLockValue(LOCK_VALUE);
+        lockInfo.setLockName(redisLock.name() + getSpElDefinitionValue(point, redisLock.keys()));
         switch (redisLock.type()) {
             case EXEC:
                 return exec(point, lockInfo);
@@ -62,22 +67,6 @@ public class RedisLockAspect {
             default:
                 return wait(point, lockInfo);
         }
-    }
-
-    private LockInfo getLockInfo(ProceedingJoinPoint point, RedisLock redisLock) {
-        LockInfo lockInfo = new LockInfo();
-        lockInfo.setFrequency(redisLock.frequency());
-        lockInfo.setLeaseTime(redisLock.leaseTime());
-        lockInfo.setWaitTime(redisLock.waitTime());
-        lockInfo.setLockValue(LOCK_VALUE);
-        lockInfo.setLockName(getKeyName(point, redisLock));
-        return lockInfo;
-    }
-
-    private static String getKeyName(ProceedingJoinPoint joinPoint, RedisLock redisLock) {
-        List<String> serviceKeys = getSpElDefinitionKey(joinPoint, redisLock.keys());
-        String listStr = StringUtils.collectionToDelimitedString(serviceKeys,"",":","");
-        return redisLock.name() + listStr;
     }
 
     private Object wait(ProceedingJoinPoint point, LockInfo lockInfo) throws Throwable  {
@@ -135,9 +124,8 @@ public class RedisLockAspect {
     }
 
     public Boolean redisSetNX(String k, String v, Integer timeout) {
-        return stringRedisTemplate.execute((RedisCallback<Boolean>) conn ->
-                conn.set(k.getBytes(), v.getBytes(), Expiration.from(timeout, TimeUnit.SECONDS),
-                        RedisStringCommands.SetOption.SET_IF_ABSENT));
+        return stringRedisTemplate.execute((RedisCallback<Boolean>) conn -> conn.set(k.getBytes(), v.getBytes(),
+                Expiration.from(timeout, TimeUnit.SECONDS), RedisStringCommands.SetOption.SET_IF_ABSENT));
     }
 
     private Boolean redisExpire(String k) {
@@ -152,33 +140,21 @@ public class RedisLockAspect {
         return stringRedisTemplate.opsForValue().get(k);
     }
 
-    public static List<String> getSpElDefinitionKey(ProceedingJoinPoint joinPoint, String[] redisLockKeys) {
+    public static String getSpElDefinitionValue(ProceedingJoinPoint joinPoint, String[] redisLockKeys) throws NoSuchMethodException {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         if (method.getDeclaringClass().isInterface()) {
-            try {
-                method = joinPoint.getTarget().getClass().getDeclaredMethod(signature.getName(), method.getParameterTypes());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            method = joinPoint.getTarget().getClass().getDeclaredMethod(signature.getName(), method.getParameterTypes());
         }
         Object[] parameterValues = joinPoint.getArgs();
+        EvaluationContext context = new MethodBasedEvaluationContext(null, method, parameterValues, nameDiscoverer);
         List<String> serviceKeys = new ArrayList<>();
         for (String serviceKey : redisLockKeys) {
             if (serviceKey != null && !serviceKey.isEmpty()) {
-                serviceKeys.add(getSpElDefinitionKey(serviceKey, method, parameterValues));
+                String string = parser.parseExpression(serviceKey).getValue(context).toString();
+                serviceKeys.add(string);
             }
         }
-        return serviceKeys;
+        return serviceKeys.stream().collect(Collectors.joining(":", ":", ""));
     }
-
-    private static String getSpElDefinitionKey(String key, Method method, Object[] parameterValues) {
-        EvaluationContext context = new MethodBasedEvaluationContext(null, method, parameterValues, nameDiscoverer);
-        try {
-            return parser.parseExpression(key).getValue(context).toString();
-        } catch (Exception e) {
-            return key;
-        }
-    }
-
 }

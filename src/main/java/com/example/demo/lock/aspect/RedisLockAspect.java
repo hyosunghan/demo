@@ -1,6 +1,5 @@
 package com.example.demo.lock.aspect;
 
-import com.example.demo.lock.model.LockInfo;
 import com.example.demo.lock.annotation.RedisLock;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -41,8 +40,6 @@ public class RedisLockAspect {
 
     private static final ExpressionParser parser = new SpelExpressionParser();
 
-    private static final String LOCK_VALUE = "0";
-
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
@@ -54,47 +51,41 @@ public class RedisLockAspect {
 
     @Around(value = "pointCut() && @annotation(redisLock)")
     public Object around(ProceedingJoinPoint point, RedisLock redisLock) throws Throwable {
-        LockInfo lockInfo = new LockInfo();
-        lockInfo.setFrequency(redisLock.frequency());
-        lockInfo.setLeaseTime(redisLock.leaseTime());
-        lockInfo.setWaitTime(redisLock.waitTime());
-        lockInfo.setLockValue(LOCK_VALUE);
-        lockInfo.setLockName(redisLock.name() + getSpElDefinitionValue(point, redisLock.keys()));
+        String lockName = redisLock.name() + getSpElDefinitionValue(point, redisLock.keys());
         switch (redisLock.type()) {
             case EXEC:
-                return exec(point, lockInfo);
+                return exec(point, redisLock, lockName);
             case WAIT:
             default:
-                return wait(point, lockInfo);
+                return wait(point, redisLock, lockName);
         }
     }
 
-    private Object wait(ProceedingJoinPoint point, LockInfo lockInfo) throws Throwable  {
-        String lockKey = lockInfo.getLockName();
-        Callable<Boolean> callable = () -> waitResult(lockInfo);
+    private Object wait(ProceedingJoinPoint point, RedisLock lockInfo, String lockName) throws Throwable  {
+        Callable<Boolean> callable = () -> waitResult(lockInfo, lockName);
         try {
             Future<Boolean> future = taskExecutor.submit(callable);
-            future.get(lockInfo.getWaitTime(), TimeUnit.SECONDS);
+            future.get(lockInfo.waitTime(), TimeUnit.SECONDS);
             try {
                 return point.proceed();
             } catch (Exception e) {
                 throw e;
             } finally {
-                redisExpire(lockKey);
+                redisExpire(lockName);
             }
         } catch (TimeoutException e) {
             throw new RuntimeException("获取锁超时");
         }
     }
 
-    private Boolean waitResult(LockInfo lockInfo) {
+    private Boolean waitResult(RedisLock lockInfo, String lockName) {
         int i = 0;
-        int sleep = 1000 / lockInfo.getFrequency();
+        int sleep = 1000 / lockInfo.frequency();
         do {
             try {
                 i++;
-                log.debug("第{}次尝试获取{}事务锁！！", i, lockInfo.getLockName());
-                boolean flag = redisSetNX(lockInfo.getLockName(), lockInfo.getLockValue(), lockInfo.getLeaseTime());
+                log.debug("第{}次尝试获取{}事务锁！！", i, lockName);
+                boolean flag = redisSetNX(lockName, lockInfo.value(), lockInfo.leaseTime());
                 if (flag) {
                     return true;
                 }
@@ -102,24 +93,24 @@ public class RedisLockAspect {
             } catch (Exception e) {
                 log.error("获取锁出现异常：", e);
             }
-        } while (i < (lockInfo.getWaitTime() + 1) * lockInfo.getFrequency());
+        } while (i < (lockInfo.waitTime() + 1) * lockInfo.frequency());
         return false;
     }
 
-    private Object exec(ProceedingJoinPoint point, LockInfo lockInfo) throws Throwable  {
-        boolean flag = redisSetNX(lockInfo.getLockName(), lockInfo.getLockValue(), lockInfo.getLeaseTime());
-        log.debug("尝试获取 {} 事务锁的结果为：{}", lockInfo.getLockName(), flag);
+    private Object exec(ProceedingJoinPoint point, RedisLock lockInfo, String lockName) throws Throwable  {
+        boolean flag = redisSetNX(lockName, lockInfo.value(), lockInfo.leaseTime());
+        log.debug("尝试获取 {} 事务锁的结果为：{}", lockName, flag);
         if (!flag) {
-            Long l = redisIncrement(lockInfo.getLockName());
-            log.debug("未获取 {} 事务锁，自增结果为：{}", lockInfo.getLockName(), l);
+            Long l = redisIncrement(lockName);
+            log.debug("未获取 {} 事务锁，自增结果为：{}", lockName, l);
             throw new RuntimeException("获取锁失败");
         }
         try {
             return point.proceed();
         } finally {
-            String v = redisGet(lockInfo.getLockName());
-            log.debug("{} 事务锁处理完成，处理过程中被拦截 {} 次！", lockInfo.getLockName(), v);
-            redisExpire(lockInfo.getLockName());
+            String v = redisGet(lockName);
+            log.debug("{} 事务锁处理完成，处理过程中被拦截 {} 次！", lockName, v);
+            redisExpire(lockName);
         }
     }
 

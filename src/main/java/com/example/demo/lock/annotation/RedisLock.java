@@ -18,22 +18,16 @@ public @interface RedisLock {
     String name() default "lock";
 
     /**
-     * 锁的值
-     * @return
-     */
-    String value() default "0";
-
-    /**
      * 尝试加锁，最多等待时间
      * @return
      */
     int waitTime() default 3;
 
     /**
-     * 上锁以后，默认20秒后自动解锁
+     * 上锁以后，默认30秒后自动解锁
      * @return
      */
-    int leaseTime() default 20;
+    int leaseTime() default 30;
 
     /**
      * 每秒尝试次数

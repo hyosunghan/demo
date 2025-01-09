@@ -15,26 +15,15 @@ public class TestServiceImpl implements TestService {
     }
 
     @Override
-    @RedisLock(name = "WAIT", keys = {"#id", "#user.username"})
-    public void testWaitLock(Long id, User user) {
+    @RedisLock(name = "LOCK:USER", keys = {"#id", "#user.username"})
+    public void testLock(Long id, User user) {
         try {
-            log.info("等待逻辑开始");
+            log.info("业务逻辑开始");
             Thread.sleep(1000);
-            log.info("等待逻辑完成");
+            log.info("业务逻辑完成");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @Override
-    @RedisLock(name = "EXEC", keys = {"#id", "#user.username"})
-    public void testExecLock(Long id, User user) {
-        try {
-            log.info("执行逻辑开始");
-            Thread.sleep(1000);
-            log.info("执行逻辑完成");
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

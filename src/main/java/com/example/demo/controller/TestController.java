@@ -26,21 +26,12 @@ public class TestController {
         return list;
     }
 
-    @GetMapping("/testWait")
-    public Object testWait() {
+    @GetMapping("/testLock")
+    public Object testLock() {
         User user = new User();
-//        user.setUsername("w");
-        new Thread(()-> testService.testWaitLock(1L, user)).start();
-        new Thread(()-> testService.testWaitLock(1L, user)).start();
+        user.setUsername("张三");
+        new Thread(()-> testService.testLock(1L, user)).start();
+        new Thread(()-> testService.testLock(1L, user)).start();
         return 2;
-    }
-
-    @GetMapping("/testExec")
-    public Object testExec() {
-        User user = new User();
-        user.setUsername("e");
-        new Thread(() -> testService.testExecLock(2L, user)).start();
-        new Thread(() -> testService.testExecLock(2L, user)).start();
-        return 3;
     }
 }

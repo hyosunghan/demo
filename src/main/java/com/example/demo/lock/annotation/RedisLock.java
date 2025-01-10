@@ -24,10 +24,10 @@ public @interface RedisLock {
     int waitTime() default 3;
 
     /**
-     * 上锁以后，默认30秒后自动解锁
+     * 单次上锁时间，会自动续约
      * @return
      */
-    int leaseTime() default 30;
+    int leaseTime() default 10;
 
     /**
      * 每秒尝试次数

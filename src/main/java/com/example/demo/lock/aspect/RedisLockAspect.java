@@ -71,7 +71,7 @@ public class RedisLockAspect {
             }
             int leaseTime = redisLock.leaseTime();
             scheduledFuture = scheduler.scheduleAtFixedRate(() -> renewalLock(lockName, lockValue, leaseTime),
-                    leaseTime / 2, leaseTime / 2, TimeUnit.SECONDS);
+                    leaseTime * 750L, leaseTime * 750L, TimeUnit.MILLISECONDS);
             return point.proceed();
         } catch (Exception e) {
             log.error("锁[" + lockName + "]执行异常: ", e);

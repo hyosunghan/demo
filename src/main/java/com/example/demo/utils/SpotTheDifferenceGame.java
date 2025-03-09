@@ -17,7 +17,7 @@ public class SpotTheDifferenceGame extends JFrame {
     private static final JLabel HEIGHT_LABEL = new JLabel("高度：");
     private static final JButton RESTART_BUTTON = new JButton("重新开始");
     private static final Border BORDER = BorderFactory.createLineBorder(Color.BLACK, 1);
-    private static final Dimension DIMENSION = new Dimension(1, 1);
+    private static final Dimension DIMENSION = new Dimension(30, 30);
     private static final Color[] COLORS = {
             Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.WHITE
     };
@@ -34,7 +34,7 @@ public class SpotTheDifferenceGame extends JFrame {
         setTitle("魔方墙找茬");
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         Dimension screenSize = toolkit.getScreenSize();
-        setSize(screenSize.width, screenSize.height);
+        setSize(screenSize.width, screenSize.width / 2 + 54);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -52,25 +52,26 @@ public class SpotTheDifferenceGame extends JFrame {
 
     private void paintAll() {
         JPanel inputPanel = new JPanel(new FlowLayout());
-
         inputPanel.add(WIDTH_LABEL);
         inputPanel.add(WIDTH_FIELD);
         inputPanel.add(HEIGHT_LABEL);
         inputPanel.add(HEIGHT_FIELD);
         inputPanel.add(RESTART_BUTTON);
-
         add(inputPanel, BorderLayout.NORTH);
 
         gridButtons1 = new JButton[GRID_HEIGHT][GRID_WIDTH];
         gridButtons2 = new JButton[GRID_HEIGHT][GRID_WIDTH];
+        JPanel mainPanel = initializeGrid(gridButtons1, gridButtons2);
+        add(mainPanel, BorderLayout.CENTER);
 
-        initializeGrid(gridButtons1, gridButtons2);
-        generateDifferences();
+        JPanel footPanel = new JPanel(new FlowLayout());
+        footPanel.add(new JLabel("游戏方式：点击方块以找到不同的颜色。"));
+        add(footPanel, BorderLayout.SOUTH);
 
         setVisible(true);
     }
 
-    private void initializeGrid(JButton[][] gridButtons1, JButton[][] gridButtons2) {
+    private JPanel initializeGrid(JButton[][] gridButtons1, JButton[][] gridButtons2) {
         JPanel panel1 = new JPanel(new GridLayout(GRID_HEIGHT, GRID_WIDTH));
         JPanel panel2 = new JPanel(new GridLayout(GRID_HEIGHT, GRID_WIDTH));
 
@@ -116,12 +117,12 @@ public class SpotTheDifferenceGame extends JFrame {
                 panel2.add(button2);
             }
         }
+        generateDifferences();
 
         JPanel mainPanel = new JPanel(new GridLayout(1, 2));
         mainPanel.add(panel1);
         mainPanel.add(panel2);
-
-        add(mainPanel, BorderLayout.CENTER);
+        return mainPanel;
     }
 
     private Color getRandomColor() {

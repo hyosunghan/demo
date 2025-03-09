@@ -9,8 +9,8 @@ import java.util.Random;
 
 public class SpotTheDifferenceGame extends JFrame {
 
-    private static int GRID_WIDTH = 50;  // 魔方墙宽度
-    private static int GRID_HEIGHT = 50; // 魔方墙高度
+    private static int GRID_WIDTH = 10;  // 魔方墙宽度
+    private static int GRID_HEIGHT = 10; // 魔方墙高度
     private static final JTextField WIDTH_FIELD = new JTextField(String.valueOf(GRID_WIDTH), 5);
     private static final JLabel WIDTH_LABEL = new JLabel("宽度：");
     private static final JTextField HEIGHT_FIELD = new JTextField(String.valueOf(GRID_HEIGHT), 5);

@@ -1,5 +1,6 @@
 package com.example.demo.interceptor;
 
+import cn.hutool.core.util.DesensitizedUtil;
 import cn.hutool.crypto.SecureUtil;
 
 import java.util.HashMap;
@@ -18,6 +19,16 @@ public class EncryptCommon {
 
     public static String decrypt(String data) {
         return SecureUtil.aes(KEY.getBytes()).decryptStr(data);
+    }
+
+    public static String desensitize(String fieldName, String value) {
+        if ("phoneNumber".equals(fieldName)) {
+            return DesensitizedUtil.mobilePhone(value);
+        }
+        if ("password".equals(fieldName)) {
+            return DesensitizedUtil.password(value);
+        }
+        return value;
     }
 
     public static boolean matchClass(String className) {

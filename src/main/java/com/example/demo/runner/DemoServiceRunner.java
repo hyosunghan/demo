@@ -1,6 +1,8 @@
 package com.example.demo.runner;
 
+import cn.hutool.core.util.StrUtil;
 import com.example.demo.annotation.CustomerInfo;
+import com.example.demo.entity.User;
 import com.example.demo.interceptor.EncryptCommon;
 import com.example.demo.sdk.IPlatformService;
 import com.example.demo.sdk.dto.AuthRequest;
@@ -102,6 +104,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 		int limit = 1000;
 		int page = 10;
 		String table = "USER";
+		String className = User.class.getName();
 		Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
 
 		String[] construct = constructQuery(conn, String.format("SELECT * from %s;", table));
@@ -113,7 +116,12 @@ public class DemoServiceRunner implements ApplicationRunner {
 		IntStream.range(0, page).parallel().forEach(p -> {
 			String columns = Arrays.stream(construct, 1, construct.length).collect(Collectors.joining(",", "(", ")"));
 			String values = IntStream.range(0, limit).parallel().mapToObj(r ->
-					IntStream.range(1, construct.length).mapToObj(c -> EncryptCommon.encrypt("0000")).collect(Collectors.joining("','", "('", "')"))
+					IntStream.range(1, construct.length).mapToObj(c -> {
+						String column = construct[c];
+						String value = column + "-" + p + "-" + r;
+						boolean isCustomerInfo = EncryptCommon.CUSTOM_PROPERTY_MAP.get(className).contains(StrUtil.toCamelCase(column.toLowerCase()));
+						return isCustomerInfo ? EncryptCommon.encrypt(value) : value;
+					}).collect(Collectors.joining("','", "('", "')"))
 			).collect(Collectors.joining(","));
 			execute(conn, String.format("INSERT INTO %s %s VALUES %s;", table, columns, values));
 		});
@@ -132,7 +140,13 @@ public class DemoServiceRunner implements ApplicationRunner {
 		int sum1 = IntStream.range(0, page).parallel().map(p -> {
 			List<String[]> pageResult = executeQuery(conn, String.format("SELECT %s FROM %s where %s between %s and %s", spliceColumns, table, key, getStart(p, min, limit), getEnd(p, min, limit)));
 			String updateSql = pageResult.parallelStream().map(line -> {
-				String values = IntStream.range(1, construct.length).mapToObj(i -> String.format("%s='%s'", construct[i], EncryptCommon.encrypt("1111"))).collect(Collectors.joining(","));
+				String values = IntStream.range(1, construct.length).mapToObj(c -> {
+					String column = construct[c];
+					boolean isCustomerInfo = EncryptCommon.CUSTOM_PROPERTY_MAP.get(className).contains(StrUtil.toCamelCase(column.toLowerCase()));
+					String value = isCustomerInfo ? EncryptCommon.decrypt(line[c]) : line[c];
+					value = value + "!";
+					return String.format("%s='%s'", column, isCustomerInfo ? EncryptCommon.encrypt(value) : value);
+				}).collect(Collectors.joining(","));
 				return String.format("UPDATE %s SET %s WHERE %s=%s;", table, values, key, line[0]);
 			}).collect(Collectors.joining());
 			execute(conn, updateSql);
@@ -150,7 +164,13 @@ public class DemoServiceRunner implements ApplicationRunner {
 			String deleteSql = String.format("DELETE FROM %s WHERE %s BETWEEN %s AND %s;", table, key, start, end);
 			execute(conn, deleteSql);
 			String values = pageResult.parallelStream().map(line -> {
-				String otherValues = IntStream.range(1, construct.length).mapToObj(c -> EncryptCommon.encrypt("2222")).collect(Collectors.joining("','", "'", "'"));
+				String otherValues = IntStream.range(1, construct.length).mapToObj(c -> {
+					String column = construct[c];
+					boolean isCustomerInfo = EncryptCommon.CUSTOM_PROPERTY_MAP.get(className).contains(StrUtil.toCamelCase(column.toLowerCase()));
+					String value = isCustomerInfo ? EncryptCommon.decrypt(line[c]) : line[c];
+					value = value + "@";
+					return isCustomerInfo ? EncryptCommon.encrypt(value) : value;
+				}).collect(Collectors.joining("','", "'", "'"));
 				return String.format("(%s,%s)", line[0], otherValues);
 			}).collect(Collectors.joining(","));
 			String insertSql = String.format("INSERT INTO %s (%s) VALUES %s;", table, spliceColumns, values);
@@ -165,7 +185,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private static int getEnd(int p, int min, int limit) {
-		return min + p * limit + limit - 1;
+		return min + (p + 1) * limit - 1;
 	}
 
 	private static int getStart(int p, int min, int limit) {

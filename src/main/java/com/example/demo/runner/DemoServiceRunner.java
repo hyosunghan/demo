@@ -118,7 +118,9 @@ public class DemoServiceRunner implements ApplicationRunner {
 			String values = IntStream.range(0, limit).parallel().mapToObj(r ->
 					IntStream.range(1, construct.length).mapToObj(c -> {
 						String column = construct[c];
-						String value = column + "-" + p + "-" + r;
+						int pLength = String.valueOf(p).length();
+						int rLength = String.valueOf(r).length();
+						String value = "131" + ("0000" + p).substring(pLength) + ("0000" + r).substring(rLength);
 						boolean isCustomerInfo = EncryptCommon.CUSTOM_PROPERTY_MAP.get(className).contains(StrUtil.toCamelCase(column.toLowerCase()));
 						return isCustomerInfo ? EncryptCommon.encrypt(value) : value;
 					}).collect(Collectors.joining("','", "('", "')"))
@@ -144,7 +146,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 					String column = construct[c];
 					boolean isCustomerInfo = EncryptCommon.CUSTOM_PROPERTY_MAP.get(className).contains(StrUtil.toCamelCase(column.toLowerCase()));
 					String value = isCustomerInfo ? EncryptCommon.decrypt(line[c]) : line[c];
-					value = value + "!";
+					value = value.replaceFirst("3", "4");
 					return String.format("%s='%s'", column, isCustomerInfo ? EncryptCommon.encrypt(value) : value);
 				}).collect(Collectors.joining(","));
 				return String.format("UPDATE %s SET %s WHERE %s=%s;", table, values, key, line[0]);
@@ -168,7 +170,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 					String column = construct[c];
 					boolean isCustomerInfo = EncryptCommon.CUSTOM_PROPERTY_MAP.get(className).contains(StrUtil.toCamelCase(column.toLowerCase()));
 					String value = isCustomerInfo ? EncryptCommon.decrypt(line[c]) : line[c];
-					value = value + "@";
+					value = value.replaceFirst("4", "5");
 					return isCustomerInfo ? EncryptCommon.encrypt(value) : value;
 				}).collect(Collectors.joining("','", "'", "'"));
 				return String.format("(%s,%s)", line[0], otherValues);

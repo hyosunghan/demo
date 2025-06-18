@@ -65,8 +65,8 @@ public class DemoServiceRunner implements ApplicationRunner {
 	public void run(ApplicationArguments args) throws Exception {
 		scannerCustomInfo();
 		consoleEnvironment();
-		testInsertAndUpdate();
-		testSdk();
+//		testInsertAndUpdate();
+//		testSdk();
 	}
 
 	private void testSdk() {
@@ -201,11 +201,12 @@ public class DemoServiceRunner implements ApplicationRunner {
 			ResultSetMetaData metaData = resultSet.getMetaData();
 			int columnCount = metaData.getColumnCount();
 			String[] columnArray = new String[columnCount];
-			for (int dbIndex = 0, index = 1; dbIndex < columnCount; dbIndex++) {
-				if (metaData.isAutoIncrement(dbIndex + 1)) {
-					columnArray[0] = metaData.getColumnName(dbIndex + 1);
+			int arIndex = 1;
+			for (int dbIndex = 1; dbIndex <= columnCount; dbIndex++) {
+				if (metaData.isAutoIncrement(dbIndex)) {
+					columnArray[0] = metaData.getColumnName(dbIndex);
 				} else {
-					columnArray[index++] = metaData.getColumnName(dbIndex + 1);
+					columnArray[arIndex++] = metaData.getColumnName(dbIndex);
 				}
 			}
 			return columnArray;

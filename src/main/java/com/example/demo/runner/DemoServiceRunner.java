@@ -67,6 +67,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 		consoleEnvironment();
 //		testInsertAndUpdate();
 //		testSdk();
+//		testQuickSort();
 	}
 
 	private void testSdk() {
@@ -98,6 +99,42 @@ public class DemoServiceRunner implements ApplicationRunner {
 			EncryptCommon.CUSTOM_PROPERTY_MAP.put(clazz.getName(), propertySet);
 		}
 		log.info("Customer property collect result: {}", JsonUtil.writeValueAsString(EncryptCommon.CUSTOM_PROPERTY_MAP));
+	}
+
+	private void testQuickSort() {
+		int[] a = {1, 6, 8, 4, 3, 7, 2, 9, 5};
+		log.info("old: " + Arrays.toString(a));
+		quickSort(a, 0, a.length - 1);
+		log.info("new: " + Arrays.toString(a));
+	}
+
+	private void quickSort(int[] arr, int start, int end) {
+		if (start >= end) {
+			return;
+		}
+		int mid = getMid(arr, start, end);
+		quickSort(arr, start, mid - 1);
+		quickSort(arr, mid + 1, end);
+	}
+
+	private int getMid(int[] arr, int start, int end) {
+		int p = arr[end];
+		int pIndex = start;
+
+		for (int i = start; i < end; i++) {
+			if (arr[i] <= p) {
+				swap(arr, i, pIndex);
+				pIndex++;
+			}
+		}
+		swap(arr, end, pIndex);
+		return pIndex;
+	}
+
+	private void swap(int[] arr, int i, int j) {
+		int temp = arr[i];
+		arr[i] = arr[j];
+		arr[j] = temp;
 	}
 
 	private void testInsertAndUpdate() throws SQLException {

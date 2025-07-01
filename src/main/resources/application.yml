@@ -29,6 +29,16 @@ spring:
     basename: messages
     encoding: UTF-8
 
+# health配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
 # mybatis配置
 mybatis:
   type-aliases-package: com.example.demo.entity

@@ -81,9 +81,8 @@ public class DemoServiceRunner implements ApplicationRunner {
 		String host = InetAddress.getLocalHost().getHostAddress();
 		Integer port = serverProperties.getPort();
 		String context = serverProperties.getServlet().getContextPath();
-		String path = environment.getProperty("spring.h2.console.path");
-		String h2console = "http://" + host + ":" + port + context + path;
-		log.info("H2 console: " + h2console);
+		String contextEndpoint = "http://" + host + ":" + port + context;
+		log.info("contextEndpoint: {}", contextEndpoint);
 	}
 
 	private void scannerCustomInfo() {
@@ -140,7 +139,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	private void testInsertAndUpdate() throws SQLException {
 		int limit = 1000;
 		int page = 10;
-		String table = "USER";
+		String table = "USERS";
 		String className = User.class.getName();
 		Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
 

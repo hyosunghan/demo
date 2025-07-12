@@ -7,9 +7,10 @@
         <result property="username" column="username" />
         <result property="password" column="password" />
         <result property="phoneNumber" column="phone_number" />
+        <result property="birthday" column="birthday" />
     </resultMap>
 
     <select id="testMapper" resultMap="UserResultMap">
-        SELECT id,username,password,phone_number FROM user
+        SELECT id,username,password,phone_number,birthday FROM users
     </select>
 </mapper>

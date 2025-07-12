@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.Date;
 
 @Data
 @NoArgsConstructor
@@ -22,4 +23,7 @@ public class User implements Serializable {
 
     @CustomerInfo
     private String phoneNumber;
+
+    private Date birthday;
+
 }

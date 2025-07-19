@@ -23,10 +23,10 @@ spring:
     encoding: UTF-8
 
 # es配置
-elastic:
-  client:
+elasticsearch:
     host: 192.168.3.21
     port: 9200
+    scheme: http
 
 # health配置
 management:

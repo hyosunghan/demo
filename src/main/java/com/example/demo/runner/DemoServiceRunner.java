@@ -1,6 +1,12 @@
 package com.example.demo.runner;
 
-import cn.hutool.core.util.StrUtil;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.cat.IndicesResponse;
+import co.elastic.clients.elasticsearch.cat.indices.IndicesRecord;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
+import co.elastic.clients.json.JsonData;
 import com.example.demo.annotation.CustomerInfo;
 import com.example.demo.entity.User;
 import com.example.demo.interceptor.EncryptCommon;
@@ -16,25 +22,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Slf4j
 @Component
@@ -43,31 +42,81 @@ public class DemoServiceRunner implements ApplicationRunner {
 	@Value("${mybatis.type-aliases-package}")
 	private String entityPackage;
 
-	@Value("${spring.datasource.url}")
-	private String dbUrl;
-
-	@Value("${spring.datasource.username}")
-	private String dbUsername;
-
-	@Value("${spring.datasource.password}")
-	private String dbPassword;
-
 	@Autowired
 	private ServerProperties serverProperties;
 
 	@Autowired
-	private Environment environment;
+	private IPlatformService platformService;
 
 	@Autowired
-	private IPlatformService platformService;
+	private ElasticsearchClient elasticsearchClient;
 
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		scannerCustomInfo();
 		consoleEnvironment();
-//		testInsertAndUpdate();
-//		testSdk();
-//		testQuickSort();
+		testSdk();
+		testQuickSort();
+		elasticsearchDemo();
+	}
+
+	private void elasticsearchDemo() throws IOException {
+		String indexName = "test_users1";
+		// 索引列表
+		IndicesResponse indices = elasticsearchClient.cat().indices();
+		String indexList = indices.valueBody().stream().map(IndicesRecord::index).collect(Collectors.joining(","));
+		log.info("ES索引列表: {}", indexList);
+		// 索引是否存在
+		boolean exists = elasticsearchClient.indices().exists(a -> a.index(indexName)).value();
+		if (exists) {
+			// 删除索引
+			elasticsearchClient.indices().delete(a -> a.index(indexName));
+			log.info("ES索引[{}]已存在, 已删除", indexName);
+		}
+		// 创建索引
+		elasticsearchClient.indices().create(b -> b
+				.index(indexName)
+				.mappings(m -> m
+						.properties("id", p -> p.long_(d -> d))
+						.properties("username", p -> p.text(t -> t))
+						.properties("password", p -> p.keyword(d -> d))
+						.properties("phoneNumber", p -> p.keyword(d -> d))
+						.properties("birthday", p -> p.date(d -> d.format("yyyy-MM-dd HH:mm:ss")))
+				)
+		);
+		log.info("ES创建索引[{}]成功", indexName);
+		// 获取索引
+		GetIndexResponse getIndexResponse = elasticsearchClient.indices().get(a -> a.index(indexName));
+		log.info("ES索引[{}]信息: {}", indexName, JsonUtil.writeValueAsString(getIndexResponse.result().get(indexName)));
+		// 创建文档
+		User user1 = new User(1L, "张三1", "123456", "12345678901", new Date());
+		elasticsearchClient.index(b -> b.index(indexName).id(user1.getId().toString()).document(user1));
+		User user2 = new User(2L, "李四黑", "456789", "13245678901", new Date());
+		elasticsearchClient.index(b -> b.index(indexName).id(user2.getId().toString()).document(user2));
+		User user3 = new User(3L, "王五", "78910JQ", "12435678901", new Date());
+		elasticsearchClient.index(b -> b.index(indexName).id(user3.getId().toString()).document(user3));
+		User user4 = new User(4L, "赵六质检员", "910JQKA", "98765432101", new Date());
+		elasticsearchClient.index(b -> b.index(indexName).id(user4.getId().toString()).document(user4));
+		log.info("ES插入数据成功");
+		// 修改文档
+		user1.setUsername("张三 黑马程序员");
+		elasticsearchClient.update(b -> b.index(indexName).id(user1.getId().toString()).doc(user1), User.class);
+		log.info("ES修改数据成功");
+		// 删除文档
+		elasticsearchClient.delete(b -> b.index(indexName).id(user3.getId().toString()));
+		log.info("ES删除数据成功");
+
+		// 查询文档
+		SearchResponse<User> search = elasticsearchClient
+				.search(b -> b.index("test_users")
+						.query(q -> q.bool(b1 ->
+								b1.must(q1 -> q1.match(m -> m.field("username").query("黑马程序员")))
+										.should(q2 -> q2.term(t -> t.field("phoneNumber").value("13245678901")))
+										.filter(a -> a.range(t -> t.field("id").gte(JsonData.of(0))))
+						)), User.class
+				);
+		List<User> result = search.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+		log.info("ES查询结果：{}", JsonUtil.writeValueAsString(result));
 	}
 
 	private void testSdk() {
@@ -134,149 +183,5 @@ public class DemoServiceRunner implements ApplicationRunner {
 		int temp = arr[i];
 		arr[i] = arr[j];
 		arr[j] = temp;
-	}
-
-	private void testInsertAndUpdate() throws SQLException {
-		int limit = 1000;
-		int page = 10;
-		String table = "USERS";
-		String className = User.class.getName();
-		Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
-
-		String[] construct = constructQuery(conn, String.format("SELECT * from %s;", table));
-		String key = construct[0];
-		String spliceColumns = Arrays.stream(construct, 0, construct.length).collect(Collectors.joining(","));
-		long l = System.currentTimeMillis();
-		log.info("查询表[{}]列：[{}]。", table, String.join(",", construct));
-
-		IntStream.range(0, page).parallel().forEach(p -> {
-			String columns = Arrays.stream(construct, 1, construct.length).collect(Collectors.joining(",", "(", ")"));
-			String values = IntStream.range(0, limit).parallel().mapToObj(r ->
-					IntStream.range(1, construct.length).mapToObj(c -> {
-						String column = construct[c];
-						int pLength = String.valueOf(p).length();
-						int rLength = String.valueOf(r).length();
-						String value = "131" + ("0000" + p).substring(pLength) + ("0000" + r).substring(rLength);
-						boolean isCustomerInfo = EncryptCommon.CUSTOM_PROPERTY_MAP.get(className).contains(StrUtil.toCamelCase(column.toLowerCase()));
-						return isCustomerInfo ? EncryptCommon.encrypt(value) : value;
-					}).collect(Collectors.joining("','", "('", "')"))
-			).collect(Collectors.joining(","));
-			execute(conn, String.format("INSERT INTO %s %s VALUES %s;", table, columns, values));
-		});
-		long l1 = System.currentTimeMillis();
-		log.info("插入表[{}]数据{}条, 耗时{}毫秒。", table, limit * page, l1 - l);
-
-		List<String[]> strings = executeQuery(conn, String.format("select count(1),min(%s),max(%s) from %s;", key, key, table));
-		int count = Integer.parseInt(strings.get(0)[0]);
-		int min = Integer.parseInt(strings.get(0)[1]);
-		int max = Integer.parseInt(strings.get(0)[2]);
-		int idCount = count == 0 ? 0 : max - min + 1;
-		page = (idCount / limit) + (idCount % limit == 0 ? 0 : 1);
-		long l2 = System.currentTimeMillis();
-		log.info("计数表[{}]数据{}条，分为{}页。", table, count, page);
-
-		int sum1 = IntStream.range(0, page).parallel().map(p -> {
-			List<String[]> pageResult = executeQuery(conn, String.format("SELECT %s FROM %s where %s between %s and %s", spliceColumns, table, key, getStart(p, min, limit), getEnd(p, min, limit)));
-			String updateSql = pageResult.parallelStream().map(line -> {
-				String values = IntStream.range(1, construct.length).mapToObj(c -> {
-					String column = construct[c];
-					boolean isCustomerInfo = EncryptCommon.CUSTOM_PROPERTY_MAP.get(className).contains(StrUtil.toCamelCase(column.toLowerCase()));
-					String value = isCustomerInfo ? EncryptCommon.decrypt(line[c]) : line[c];
-					value = value.replaceFirst("3", "4");
-					return String.format("%s='%s'", column, isCustomerInfo ? EncryptCommon.encrypt(value) : value);
-				}).collect(Collectors.joining(","));
-				return String.format("UPDATE %s SET %s WHERE %s=%s;", table, values, key, line[0]);
-			}).collect(Collectors.joining());
-			execute(conn, updateSql);
-			log.info("查询并更新表[{}]第{}页, 包含{}条。", table, p, pageResult.size());
-			return pageResult.size();
-		}).sum();
-		long l3 = System.currentTimeMillis();
-		log.info("查询并更新表[{}]数据{}条，耗时{}毫秒。", table, sum1, l3 - l2);
-
-		int sum2 = IntStream.range(0, page).parallel().map(p -> {
-			int start = getStart(p, min, limit);
-			int end = getEnd(p, min, limit);
-			String selectSql = String.format("SELECT %s FROM %s WHERE %s BETWEEN %s AND %s;", spliceColumns, table, key, start, end);
-			List<String[]> pageResult = executeQuery(conn, selectSql);
-			String deleteSql = String.format("DELETE FROM %s WHERE %s BETWEEN %s AND %s;", table, key, start, end);
-			execute(conn, deleteSql);
-			String values = pageResult.parallelStream().map(line -> {
-				String otherValues = IntStream.range(1, construct.length).mapToObj(c -> {
-					String column = construct[c];
-					boolean isCustomerInfo = EncryptCommon.CUSTOM_PROPERTY_MAP.get(className).contains(StrUtil.toCamelCase(column.toLowerCase()));
-					String value = isCustomerInfo ? EncryptCommon.decrypt(line[c]) : line[c];
-					value = value.replaceFirst("4", "5");
-					return isCustomerInfo ? EncryptCommon.encrypt(value) : value;
-				}).collect(Collectors.joining("','", "'", "'"));
-				return String.format("(%s,%s)", line[0], otherValues);
-			}).collect(Collectors.joining(","));
-			String insertSql = String.format("INSERT INTO %s (%s) VALUES %s;", table, spliceColumns, values);
-			execute(conn, insertSql);
-			log.info("查询并删除重写表[{}]主键区间[{},{}]，包含{}条。", table, start, end, pageResult.size());
-			return pageResult.size();
-		}).sum();
-		long l4 = System.currentTimeMillis();
-		log.info("查询并删除重写表[{}]数据{}条，耗时{}毫秒。", table, sum2, l4 - l3);
-
-		conn.close();
-	}
-
-	private static int getEnd(int p, int min, int limit) {
-		return min + (p + 1) * limit - 1;
-	}
-
-	private static int getStart(int p, int min, int limit) {
-		return min + p * limit;
-	}
-
-	private String[] constructQuery(Connection connection, String selectSql) {
-		try {
-			PreparedStatement preparedStatement = connection.prepareStatement(selectSql);
-			ResultSet resultSet = preparedStatement.executeQuery();
-			ResultSetMetaData metaData = resultSet.getMetaData();
-			int columnCount = metaData.getColumnCount();
-			String[] columnArray = new String[columnCount];
-			int arIndex = 1;
-			for (int dbIndex = 1; dbIndex <= columnCount; dbIndex++) {
-				if (metaData.isAutoIncrement(dbIndex)) {
-					columnArray[0] = metaData.getColumnName(dbIndex);
-				} else {
-					columnArray[arIndex++] = metaData.getColumnName(dbIndex);
-				}
-			}
-			return columnArray;
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-    }
-
-	private static List<String[]> executeQuery(Connection connection, String selectSql) {
-		ArrayList<String[]> pageResult = new ArrayList<>();
-		try {
-			PreparedStatement preparedStatement = connection.prepareStatement(selectSql);
-			ResultSet resultSet = preparedStatement.executeQuery();
-			ResultSetMetaData metaData = resultSet.getMetaData();
-			int columnCount = metaData.getColumnCount();
-			while (resultSet.next()) {
-				String[] line = new String[columnCount];
-				for (int i = 0; i < columnCount; i++) {
-					line[i] = resultSet.getString(i + 1);
-				}
-				pageResult.add(line);
-			}
-		} catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-		return pageResult;
-    }
-
-	private static void execute(Connection connection, String sql) {
-		try {
-			PreparedStatement preparedStatement = connection.prepareStatement(sql);
-			preparedStatement.execute();
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
 	}
 }

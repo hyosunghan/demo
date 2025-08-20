@@ -17,11 +17,16 @@ import com.example.demo.sdk.dto.PlatformEnum;
 import com.example.demo.utils.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -37,7 +42,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class DemoServiceRunner implements ApplicationRunner {
+public class DemoServiceRunner implements ApplicationRunner, ApplicationContextAware {
 
 	@Value("${mybatis.type-aliases-package}")
 	private String entityPackage;
@@ -51,13 +56,42 @@ public class DemoServiceRunner implements ApplicationRunner {
 	@Autowired
 	private ElasticsearchClient elasticsearchClient;
 
+	private static ApplicationContext context;
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		context = applicationContext;
+	}
+
+	@Bean
+	public User user() {
+		return new User(3L, "张三", "123456", "12345678901", new Date());
+	}
+
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		scannerCustomInfo();
 		consoleEnvironment();
+		testRegisterBean();
 		testSdk();
 		testQuickSort();
 		elasticsearchDemo();
+	}
+
+	private void testRegisterBean() {
+		while (true) {
+			String beanName = "user";
+			User user = context.getBean(beanName, User.class);
+			log.info("注册的用户Bean为：" + user.getUsername());
+			if (!"张三".equals(user.getUsername())) {
+				break;
+			}
+			DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) context.getAutowireCapableBeanFactory();
+			beanFactory.removeBeanDefinition(beanName);
+			User newUser = new User(4L, "李四", "123456", "12345678901", new Date());
+			beanFactory.registerSingleton(beanName, newUser);
+			beanFactory.autowireBean(newUser);
+		}
 	}
 
 	private void elasticsearchDemo() throws IOException {

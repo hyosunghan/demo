@@ -4,10 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.cat.IndicesResponse;
 import co.elastic.clients.elasticsearch.cat.indices.IndicesRecord;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
-import co.elastic.clients.json.JsonData;
 import com.example.demo.annotation.CustomerInfo;
 import com.example.demo.entity.User;
 import com.example.demo.interceptor.EncryptCommon;
@@ -15,43 +12,41 @@ import com.example.demo.sdk.IPlatformService;
 import com.example.demo.sdk.dto.AuthRequest;
 import com.example.demo.sdk.dto.AuthResponse;
 import com.example.demo.sdk.dto.PlatformEnum;
+import com.example.demo.service.TestService;
+import com.example.demo.service.TestServiceImpl;
+import com.example.demo.utils.BitPermission;
 import com.example.demo.utils.JsonUtil;
+import com.example.demo.utils.MyInvocationHandler;
+import com.example.demo.utils.RestUtil;
+import com.example.demo.utils.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class DemoServiceRunner implements ApplicationRunner, ApplicationContextAware {
+public class DemoServiceRunner implements ApplicationRunner {
 
 	@Value("${mybatis.type-aliases-package}")
 	private String entityPackage;
@@ -65,31 +60,63 @@ public class DemoServiceRunner implements ApplicationRunner, ApplicationContextA
 	@Autowired
 	private ElasticsearchClient elasticsearchClient;
 
-	private static ApplicationContext context;
-
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		context = applicationContext;
-	}
-
-	@Bean
-	public User user() {
-		return new User(3L, "张三", "123456", "12345678901", new Date());
-	}
-
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		scannerCustomInfo();
 		consoleEnvironment();
-//		testRegisterBean();
-//		testWriteFile();
-//		testSdk();
-//		testQuickSort();
-//		elasticsearchDemo();
+		testSpringUtil();
+		testBitPermission();
+		testMyInvocationHandler();
+		testWriteFile();
+		testSdk();
+		testQuickSort();
+		testElasticsearch();
+		testRestUtil();
+		testJsonUtil();
+	}
+
+	private void testJsonUtil() {
+		log.info("测试JsonUtil======================================================");
+		HashMap<String, String> stringStringHashMap = new HashMap<>();
+		stringStringHashMap.put("name", "张三");
+		String s = JsonUtil.writeValueAsString(stringStringHashMap);
+		log.info("请求结果为: {}", s);
+	}
+
+	private void testRestUtil() {
+		log.info("测试RestUtil======================================================");
+		String s = RestUtil.get("https://www.baidu.com", String.class);
+		log.info("请求结果为: {}", s);
+	}
+
+	private void testMyInvocationHandler() {
+		log.info("测试动态代理======================================================");
+		TestService testService = new TestServiceImpl();
+		testService.testProxy();
+
+		TestService proxyService = (TestService) MyInvocationHandler.getProxy(testService,
+				method -> System.out.println("对象方法执行前" + method.getName()),
+				method -> System.out.println("对象方法执行后" + method.getName()));
+		proxyService.testProxy();
+	}
+
+	private void testBitPermission() {
+		log.info("测试位运算======================================================");
+		BitPermission bitPermission = new BitPermission();
+		bitPermission.setPermissions(BitPermission.PERMISSION_INSERT | BitPermission.PERMISSION_DELETE
+				| BitPermission.PERMISSION_UPDATE | BitPermission.PERMISSION_SELECT);
+		log.info("初始化权限增删改查{}", Integer.toBinaryString(bitPermission.getPermissions()));
+		bitPermission.disablePermissions(BitPermission.PERMISSION_INSERT | BitPermission.PERMISSION_DELETE);
+		log.info("取消权限增删{}", Integer.toBinaryString(bitPermission.getPermissions()));
+		bitPermission.enablePermissions(BitPermission.PERMISSION_INSERT);
+		log.info("追加权限增{}", Integer.toBinaryString(bitPermission.getPermissions()));
+		log.info("是否允许增{}", bitPermission.isAllow(BitPermission.PERMISSION_INSERT));
+		log.info("是否不允许增{}", bitPermission.isNotAllow(BitPermission.PERMISSION_INSERT));
 	}
 
 	private void testWriteFile() {
-		int count = 1000001;
+		log.info("测试写文件======================================================");
+		int count = 50001;
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 		String dateTime = formatter.format(LocalDateTime.now());
 		ArrayList<String> list = new ArrayList<>();
@@ -110,23 +137,20 @@ public class DemoServiceRunner implements ApplicationRunner, ApplicationContextA
 		}
 	}
 
-	private void testRegisterBean() {
-		while (true) {
-			String beanName = "user";
-			User user = context.getBean(beanName, User.class);
-			log.info("注册的用户Bean为：" + user.getUsername());
-			if (!"张三".equals(user.getUsername())) {
-				break;
-			}
-			DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) context.getAutowireCapableBeanFactory();
-			beanFactory.destroySingleton(beanName);
-			User newUser = new User(4L, "李四", "123456", "12345678901", new Date());
-			beanFactory.registerSingleton(beanName, newUser);
-			beanFactory.autowireBean(newUser);
-		}
+	private void testSpringUtil() {
+		log.info("测试SpringUtil======================================================");
+		String beanName = "user";
+		User user = new User(1L, "张三", "123456", "12345678901", new Date());
+		SpringUtil.registerBean(beanName, user);
+		user = SpringUtil.getBean(beanName, User.class);
+		log.info("注册的用户Bean为：" + user.getUsername());
+		User newUser = new User(4L, "李四", "123456", "12345678901", new Date());
+		SpringUtil.replaceBean(beanName, newUser);
+		newUser = SpringUtil.getBean(beanName, User.class);
+		log.info("替换的用户Bean为：" + newUser.getUsername());
 	}
 
-	private void elasticsearchDemo() throws IOException {
+	private void testElasticsearch() throws IOException {
 		String indexName = "test_users1";
 		// 索引列表
 		IndicesResponse indices = elasticsearchClient.cat().indices();
@@ -186,6 +210,7 @@ public class DemoServiceRunner implements ApplicationRunner, ApplicationContextA
 	}
 
 	private void testSdk() {
+		log.info("测试SDK======================================================");
 		AuthRequest authRequest = new AuthRequest();
 		authRequest.setPlatform(PlatformEnum._1688);
 		AuthResponse authResponse = platformService.refreshAccessToken(authRequest);
@@ -216,6 +241,7 @@ public class DemoServiceRunner implements ApplicationRunner, ApplicationContextA
 	}
 
 	private void testQuickSort() {
+		log.info("测试快速排序======================================================");
 		int[] a = {1, 6, 8, 4, 3, 7, 2, 9, 5};
 		log.info("old: " + Arrays.toString(a));
 		quickSort(a, 0, a.length - 1);

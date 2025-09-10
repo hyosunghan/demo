@@ -19,7 +19,7 @@ public class TestServiceImpl implements TestService {
     public void testLock(Long id, User user) {
         try {
             log.info("业务逻辑开始");
-            Thread.sleep(1000);
+            Thread.sleep(7000);
             log.info("业务逻辑完成");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

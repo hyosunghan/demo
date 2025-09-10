@@ -27,13 +27,13 @@ public @interface RedisLock {
      * 单次上锁时间，会自动续约
      * @return
      */
-    int leaseTime() default 10;
+    int leaseTime() default 5;
 
     /**
      * 每秒尝试次数
      * @return
      */
-    int frequency() default 4;
+    int frequency() default 2;
 
     /**
      * 自定义业务key，spring EL 表达式形式，获取方法参数对应的值

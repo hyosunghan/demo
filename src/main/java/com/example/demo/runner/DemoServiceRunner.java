@@ -1,5 +1,6 @@
 package com.example.demo.runner;
 
+import cn.hutool.core.io.FileUtil;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.cat.IndicesResponse;
 import co.elastic.clients.elasticsearch.cat.indices.IndicesRecord;
@@ -20,6 +21,7 @@ import org.reflections.Reflections;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -33,11 +35,18 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -72,10 +81,33 @@ public class DemoServiceRunner implements ApplicationRunner, ApplicationContextA
 	public void run(ApplicationArguments args) throws Exception {
 		scannerCustomInfo();
 		consoleEnvironment();
-		testRegisterBean();
-		testSdk();
-		testQuickSort();
-		elasticsearchDemo();
+//		testRegisterBean();
+//		testWriteFile();
+//		testSdk();
+//		testQuickSort();
+//		elasticsearchDemo();
+	}
+
+	private void testWriteFile() {
+		int count = 1000001;
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+		String dateTime = formatter.format(LocalDateTime.now());
+		ArrayList<String> list = new ArrayList<>();
+		for (int i = 1; i <= count; i++) {
+			StringBuilder line = new StringBuilder();
+			UUID uuid = UUID.randomUUID();
+			line.append(i).append("|")
+					.append(uuid).append("|")
+					.append(uuid).append("|")
+					.append(uuid).append("|")
+					.append(dateTime);
+			list.add(line.toString());
+			if (i % 10000 == 0 || i == count) {
+				FileUtil.writeLines(list, "~/mydata/test.txt", StandardCharsets.UTF_8, false);
+				list.clear();
+				log.info("已写入" + i + "行数据");
+			}
+		}
 	}
 
 	private void testRegisterBean() {
@@ -87,7 +119,7 @@ public class DemoServiceRunner implements ApplicationRunner, ApplicationContextA
 				break;
 			}
 			DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) context.getAutowireCapableBeanFactory();
-			beanFactory.removeBeanDefinition(beanName);
+			beanFactory.destroySingleton(beanName);
 			User newUser = new User(4L, "李四", "123456", "12345678901", new Date());
 			beanFactory.registerSingleton(beanName, newUser);
 			beanFactory.autowireBean(newUser);
@@ -140,17 +172,17 @@ public class DemoServiceRunner implements ApplicationRunner, ApplicationContextA
 		elasticsearchClient.delete(b -> b.index(indexName).id(user3.getId().toString()));
 		log.info("ES删除数据成功");
 
-		// 查询文档
-		SearchResponse<User> search = elasticsearchClient
-				.search(b -> b.index("test_users")
-						.query(q -> q.bool(b1 ->
-								b1.must(q1 -> q1.match(m -> m.field("username").query("黑马程序员")))
-										.should(q2 -> q2.term(t -> t.field("phoneNumber").value("13245678901")))
-										.filter(a -> a.range(t -> t.field("id").gte(JsonData.of(0))))
-						)), User.class
-				);
-		List<User> result = search.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
-		log.info("ES查询结果：{}", JsonUtil.writeValueAsString(result));
+//		// 查询文档
+//		SearchResponse<User> search = elasticsearchClient
+//				.search(b -> b.index("test_users")
+//						.query(q -> q.bool(b1 ->
+//								b1.must(q1 -> q1.match(m -> m.field("username").query("黑马程序员")))
+//										.should(q2 -> q2.term(t -> t.field("phoneNumber").value("13245678901")))
+//										.filter(a -> a.range(t -> t.field("id").gte(JsonData.of(0))))
+//						)), User.class
+//				);
+//		List<User> result = search.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+//		log.info("ES查询结果：{}", JsonUtil.writeValueAsString(result));
 	}
 
 	private void testSdk() {

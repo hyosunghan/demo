@@ -10,12 +10,13 @@ spring:
     data: classpath*:db/data.sql
     initialization-mode: always # always,never,embedded
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.3.21:3306/demo-spring-cloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false
+    url: jdbc:mysql://192.168.3.21:3306/demo_spring_cloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false
     username: root
     password: root
   redis:
     host: 192.168.3.21
     port: 6379
+    password: root
   mvc:
     throw-exception-if-no-handler-found: true
   messages:

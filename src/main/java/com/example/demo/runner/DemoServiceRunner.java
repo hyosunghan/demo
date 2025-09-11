@@ -82,21 +82,21 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private void testRedisLock() {
-		log.info("\n测试RedisLock");
+		log.info("-----------------------------------------------------------测试RedisLock");
 		User user = new User(1L, "张三", "123456", "12345678901", new Date());
 		new Thread(()-> testService.testLock(1L, user)).start();
 		testService.testLock(1L, user);
 	}
 
 	private void testSnowFlakeIdentity() {
-		log.info("\n测试雪花算法");
+		log.info("-----------------------------------------------------------测试雪花算法");
 		SnowFlakeIdentity.machineNumber = 1;
 		long l = SnowFlakeIdentity.getInstance().nextId();
 		log.info("生成id为：{}", l);
 	}
 
 	private void testJsonUtil() {
-		log.info("\n测试JsonUtil");
+		log.info("-----------------------------------------------------------测试JsonUtil");
 		HashMap<String, String> stringStringHashMap = new HashMap<>();
 		stringStringHashMap.put("name", "张三");
 		String s = JsonUtil.writeValueAsString(stringStringHashMap);
@@ -104,13 +104,13 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private void testRestUtil() {
-		log.info("\n测试RestUtil");
+		log.info("-----------------------------------------------------------测试RestUtil");
 		String s = RestUtil.get("https://www.baidu.com", String.class);
 		log.info("请求结果为: {}", s);
 	}
 
 	private void testMyInvocationHandler() {
-		log.info("\n测试动态代理");
+		log.info("-----------------------------------------------------------测试动态代理");
 		TestService testService = new TestServiceImpl();
 		testService.testProxy();
 
@@ -121,7 +121,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private void testBitPermission() {
-		log.info("\n测试位运算");
+		log.info("-----------------------------------------------------------测试位运算");
 		BitPermission bitPermission = new BitPermission();
 		bitPermission.setPermissions(BitPermission.PERMISSION_INSERT | BitPermission.PERMISSION_DELETE
 				| BitPermission.PERMISSION_UPDATE | BitPermission.PERMISSION_SELECT);
@@ -135,7 +135,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private void testWriteFile() {
-		log.info("\n测试写文件");
+		log.info("-----------------------------------------------------------测试写文件");
 		int count = 50001;
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 		String dateTime = formatter.format(LocalDateTime.now());
@@ -158,7 +158,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private void testSpringUtil() {
-		log.info("\n测试SpringUtil");
+		log.info("-----------------------------------------------------------测试SpringUtil");
 		String beanName = "user";
 		User user = new User(1L, "张三", "123456", "12345678901", new Date());
 		SpringUtil.registerBean(beanName, user);
@@ -171,7 +171,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private void testElasticsearch() throws IOException {
-		log.info("\n测试Elasticsearch");
+		log.info("-----------------------------------------------------------测试Elasticsearch");
 		String indexName = "test_users1";
 		// 索引列表
 		IndicesResponse indices = elasticsearchClient.cat().indices();
@@ -231,7 +231,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private void testSdk() {
-		log.info("\n测试SDK");
+		log.info("-----------------------------------------------------------测试SDK");
 		AuthRequest authRequest = new AuthRequest();
 		authRequest.setPlatform(PlatformEnum._1688);
 		AuthResponse authResponse = platformService.refreshAccessToken(authRequest);
@@ -262,7 +262,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	}
 
 	private void testQuickSort() {
-		log.info("\n测试快速排序");
+		log.info("-----------------------------------------------------------测试快速排序");
 		int[] a = {1, 6, 8, 4, 3, 7, 2, 9, 5};
 		log.info("old: " + Arrays.toString(a));
 		quickSort(a, 0, a.length - 1);

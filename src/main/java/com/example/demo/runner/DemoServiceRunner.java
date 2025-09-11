@@ -4,6 +4,8 @@ import cn.hutool.core.io.FileUtil;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.cat.IndicesResponse;
 import co.elastic.clients.elasticsearch.cat.indices.IndicesRecord;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
 import com.example.demo.annotation.CustomerInfo;
 import com.example.demo.entity.User;
@@ -41,6 +43,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -172,7 +175,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 
 	private void testElasticsearch() throws IOException {
 		log.info("-----------------------------------------------------------测试Elasticsearch");
-		String indexName = "test_users1";
+		String indexName = "test_users";
 		// 索引列表
 		IndicesResponse indices = elasticsearchClient.cat().indices();
 		String indexList = indices.valueBody().stream().map(IndicesRecord::index).collect(Collectors.joining(","));
@@ -217,17 +220,17 @@ public class DemoServiceRunner implements ApplicationRunner {
 		elasticsearchClient.delete(b -> b.index(indexName).id(user3.getId().toString()));
 		log.info("ES删除数据成功");
 
-//		// 查询文档
-//		SearchResponse<User> search = elasticsearchClient
-//				.search(b -> b.index("test_users")
-//						.query(q -> q.bool(b1 ->
-//								b1.must(q1 -> q1.match(m -> m.field("username").query("黑马程序员")))
-//										.should(q2 -> q2.term(t -> t.field("phoneNumber").value("13245678901")))
+		// 查询文档
+		SearchResponse<User> search = elasticsearchClient
+				.search(b -> b.index(indexName)
+						.query(q -> q.bool(b1 ->
+								b1.must(q1 -> q1.term(m -> m.field("username").value("赵六质检员")))
+//										.should(q2 -> q2.term(t -> t.field("phoneNumber").value("98765432101")))
 //										.filter(a -> a.range(t -> t.field("id").gte(JsonData.of(0))))
-//						)), User.class
-//				);
-//		List<User> result = search.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
-//		log.info("ES查询结果：{}", JsonUtil.writeValueAsString(result));
+						)), User.class
+				);
+		List<User> result = search.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+		log.info("ES查询结果：{}", JsonUtil.writeValueAsString(result));
 	}
 
 	private void testSdk() {

@@ -69,11 +69,11 @@ public class RedisLockAspect {
                 return null;
             }
             int leaseTime = redisLock.leaseTime();
-            scheduledFuture = scheduler.scheduleAtFixedRate(() -> renewalLock(lockName, lockValue, leaseTime),
-                    leaseTime * 750L, leaseTime * 750L, TimeUnit.MILLISECONDS);
+            Runnable renewalTask = () -> renewalLock(lockName, lockValue, leaseTime);
+            scheduledFuture = scheduler.schedule(renewalTask, leaseTime * 750L, TimeUnit.MILLISECONDS);
             return point.proceed();
         } catch (Exception e) {
-            log.error("锁[" + lockName + "]执行异常: ", e);
+            log.error("锁[{}]执行异常: ", lockName, e);
             return null;
         } finally {
             if (locked) {
@@ -90,32 +90,32 @@ public class RedisLockAspect {
         do {
             Boolean flag = redisTemplate.opsForValue().setIfAbsent(lockName, lockValue, lockInfo.leaseTime(), TimeUnit.SECONDS);
             if (Boolean.TRUE.equals(flag)) {
-                log.info("锁[" + lockName + "]获取成功");
+                log.info("锁[{}]获取成功", lockName);
                 return true;
             }
-            log.info("锁[" + lockName + "]获取中...");
+            log.info("锁[{}]获取中...", lockName);
             Thread.sleep(1000 / lockInfo.frequency());
         } while ((System.currentTimeMillis() - start) / 1000 < lockInfo.waitTime());
-        log.warn("锁[" + lockName + "]获取超时");
+        log.warn("锁[{}]获取超时", lockName);
         return false;
     }
 
     private void renewalLock(String lockName, String lockValue, int leaseTime) {
         try {
             Long result = redisTemplate.execute(RENEWAL_SCRIPT, Collections.singletonList(lockName), lockValue, String.valueOf(leaseTime));
-            if (result == null || result == 0) {
-                log.warn("锁[" + lockName + "]续约失败");
+            if (result == 0) {
+                log.warn("锁[{}]续约失败", lockName);
                 return;
             }
-            log.info("锁[" + lockName + "]续约成功");
+            log.info("锁[{}]续约成功", lockName);
         } catch (Exception e) {
-            log.error("锁[" + lockName + "]续约异常: ", e);
+            log.error("锁[{}]续约异常: ", lockName, e);
         }
     }
 
     private void unlock(String lockName, String lockValue) {
         redisTemplate.execute(UNLOCK_SCRIPT, Collections.singletonList(lockName), lockValue);
-        log.info("锁[" + lockName + "]释放成功");
+        log.info("锁[{}]释放成功", lockName);
     }
 
     public static String getSpElDefinitionValue(ProceedingJoinPoint joinPoint, String[] redisLockKeys) {

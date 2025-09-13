@@ -148,7 +148,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	/**
 	 * 写入文件到表
 	 * 配置
-	 * 	1.服务端：set global local_infile = 1;
+	 * 	1.服务端：set global local_infile = 1;（查看：SHOW VARIABLES LIKE 'local_infile'）
 	 * 	2.客户端：url:jdbc:...&allowLoadLocalInfile=true
 	 * 测试数据：
 	 * 	10万：1.造文件1秒；2.导入表360秒
@@ -165,21 +165,11 @@ public class DemoServiceRunner implements ApplicationRunner {
 		long l1 = mockTestFile(filePath, count);
 		log.info("已写入{}行数据, 用时{}ms", count, l1 - l);
 		Connection connection = dataSource.getConnection();
-		String checkSql = "SHOW VARIABLES LIKE 'local_infile'";
-		PreparedStatement checkStmt = connection.prepareStatement(checkSql);
-		ResultSet rs = checkStmt.executeQuery();
-		if (rs.next()) {
-			String localInfile = rs.getString(2);
-			if (!"ON".equalsIgnoreCase(localInfile)) {
-				log.warn("MySQL local_infile未启用，忽略以读取文件的方式导入数据");
-				return;
-			}
-		}
 		// 下列SQL去掉LOCAL后即为读取数据库本地文件的处理方式，需使用SHOW VARIABLES LIKE 'secure_file_priv'查看数据库允许路径
-		String sql1 = "LOAD DATA LOCAL INFILE ? INTO TABLE users FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n'";
-		PreparedStatement pstmt1 = connection.prepareStatement(sql1);
-		pstmt1.setString(1, filePath);
-		pstmt1.execute();
+		String sql = "LOAD DATA LOCAL INFILE ? INTO TABLE users FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n'";
+		PreparedStatement pstmt = connection.prepareStatement(sql);
+		pstmt.setString(1, filePath);
+		pstmt.execute();
 		log.info("已导入{}行数据, 用时{}ms", count, System.currentTimeMillis() - l1);
 	}
 

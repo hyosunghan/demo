@@ -162,7 +162,8 @@ public class DemoServiceRunner implements ApplicationRunner {
 		String filePath = "/Users/hanxiaoxing/mydata/test.txt";
 		int count = 100001;
 		long l = System.currentTimeMillis();
-		long l1 = mockTestFile(filePath, count);
+		mockTestFile(filePath, count);
+		long l1 = System.currentTimeMillis();
 		log.info("已写入{}行数据, 用时{}ms", count, l1 - l);
 		Connection connection = dataSource.getConnection();
 		// 下列SQL去掉LOCAL后即为读取数据库本地文件的处理方式，需使用SHOW VARIABLES LIKE 'secure_file_priv'查看数据库允许路径
@@ -170,10 +171,11 @@ public class DemoServiceRunner implements ApplicationRunner {
 		PreparedStatement pstmt = connection.prepareStatement(sql);
 		pstmt.setString(1, filePath);
 		pstmt.execute();
-		log.info("已导入{}行数据, 用时{}ms", count, System.currentTimeMillis() - l1);
+		long l2 = System.currentTimeMillis();
+		log.info("已导入{}行数据, 用时{}ms", count, l2 - l1);
 	}
 
-	private static long mockTestFile(String filePath, int count) {
+	private void mockTestFile(String filePath, int count) {
 		FileUtil.clean(filePath);
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 		String dateTime = formatter.format(LocalDateTime.now());
@@ -193,8 +195,6 @@ public class DemoServiceRunner implements ApplicationRunner {
 				log.info("已写入" + i + "行数据");
 			}
 		}
-		long l1 = System.currentTimeMillis();
-		return l1;
 	}
 
 	private void testSpringUtil() {

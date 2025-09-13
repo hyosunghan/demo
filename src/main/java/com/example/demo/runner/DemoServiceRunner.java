@@ -31,11 +31,16 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.stereotype.Component;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -67,6 +72,9 @@ public class DemoServiceRunner implements ApplicationRunner {
 	@Autowired
 	private TestService testService;
 
+	@Autowired
+	private DataSource dataSource;
+
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		scannerCustomInfo();
@@ -74,14 +82,14 @@ public class DemoServiceRunner implements ApplicationRunner {
 		testSpringUtil();
 		testBitPermission();
 		testMyInvocationHandler();
-		testWriteFile();
 		testSdk();
 		testQuickSort();
-		testElasticsearch();
 		testRestUtil();
 		testJsonUtil();
 		testSnowFlakeIdentity();
 		testRedisLock();
+		testWriteFileToTable();
+		testElasticsearch();
 	}
 
 	private void testRedisLock() {
@@ -137,9 +145,46 @@ public class DemoServiceRunner implements ApplicationRunner {
 		log.info("是否不允许增{}", bitPermission.isNotAllow(BitPermission.PERMISSION_INSERT));
 	}
 
-	private void testWriteFile() {
-		log.info("-----------------------------------------------------------测试写文件");
-		int count = 50001;
+	/**
+	 * 写入文件到表
+	 * 配置
+	 * 	1.服务端：set global local_infile = 1;
+	 * 	2.客户端：url:jdbc:...&allowLoadLocalInfile=true
+	 * 测试数据：
+	 * 	10万：1.造文件1秒；2.导入表360秒
+	 * 	100万：1.造文件7秒；2.导入表372秒
+	 * 	1000万：1.造文件81秒；2.导入表431秒
+	 *
+	 * @throws SQLException
+	 */
+	private void testWriteFileToTable() throws SQLException {
+		log.info("-----------------------------------------------------------测试写文件到数据表");
+		String filePath = "/Users/hanxiaoxing/mydata/test.txt";
+		int count = 100001;
+		long l = System.currentTimeMillis();
+		long l1 = mockTestFile(filePath, count);
+		log.info("已写入{}行数据, 用时{}ms", count, l1 - l);
+		Connection connection = dataSource.getConnection();
+		String checkSql = "SHOW VARIABLES LIKE 'local_infile'";
+		PreparedStatement checkStmt = connection.prepareStatement(checkSql);
+		ResultSet rs = checkStmt.executeQuery();
+		if (rs.next()) {
+			String localInfile = rs.getString(2);
+			if (!"ON".equalsIgnoreCase(localInfile)) {
+				log.warn("MySQL local_infile未启用，忽略以读取文件的方式导入数据");
+				return;
+			}
+		}
+		// 下列SQL去掉LOCAL后即为读取数据库本地文件的处理方式，需使用SHOW VARIABLES LIKE 'secure_file_priv'查看数据库允许路径
+		String sql1 = "LOAD DATA LOCAL INFILE ? INTO TABLE users FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n'";
+		PreparedStatement pstmt1 = connection.prepareStatement(sql1);
+		pstmt1.setString(1, filePath);
+		pstmt1.execute();
+		log.info("已导入{}行数据, 用时{}ms", count, System.currentTimeMillis() - l1);
+	}
+
+	private static long mockTestFile(String filePath, int count) {
+		FileUtil.clean(filePath);
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 		String dateTime = formatter.format(LocalDateTime.now());
 		ArrayList<String> list = new ArrayList<>();
@@ -152,12 +197,14 @@ public class DemoServiceRunner implements ApplicationRunner {
 					.append(uuid).append("|")
 					.append(dateTime);
 			list.add(line.toString());
-			if (i % 10000 == 0 || i == count) {
-				FileUtil.writeLines(list, "~/mydata/test.txt", StandardCharsets.UTF_8, false);
+			if (i % 100000 == 0 || i == count) {
+				FileUtil.writeLines(list, filePath, StandardCharsets.UTF_8, true);
 				list.clear();
 				log.info("已写入" + i + "行数据");
 			}
 		}
+		long l1 = System.currentTimeMillis();
+		return l1;
 	}
 
 	private void testSpringUtil() {

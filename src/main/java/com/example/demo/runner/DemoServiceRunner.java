@@ -91,7 +91,6 @@ public class DemoServiceRunner implements ApplicationRunner {
 		testRedisLock();
 		testMockTestFile(filePath, count);
 		testWriteFileToTable(filePath, count);
-		testWriteFileToTable2(filePath, count);
 		testElasticsearch();
 	}
 
@@ -197,9 +196,6 @@ public class DemoServiceRunner implements ApplicationRunner {
 		pstmt.setString(1, filePath);
 		pstmt.execute();
 		log.info("已导入{}行数据, 用时{}ms", count, System.currentTimeMillis() - l);
-	}
-
-	private void testWriteFileToTable2(String filePath, int count) {
 	}
 
 	private void testSpringUtil() {

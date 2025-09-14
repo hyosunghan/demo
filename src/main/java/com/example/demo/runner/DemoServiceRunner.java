@@ -39,7 +39,6 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -77,6 +76,8 @@ public class DemoServiceRunner implements ApplicationRunner {
 
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
+		String filePath = "/Users/hanxiaoxing/mydata/test.txt";
+		int count = 1000001;
 		scannerCustomInfo();
 		consoleEnvironment();
 		testSpringUtil();
@@ -88,9 +89,12 @@ public class DemoServiceRunner implements ApplicationRunner {
 		testJsonUtil();
 		testSnowFlakeIdentity();
 		testRedisLock();
-		testWriteFileToTable();
+		testMockTestFile(filePath, count);
+		testWriteFileToTable(filePath, count);
+		testWriteFileToTable2(filePath, count);
 		testElasticsearch();
 	}
+
 
 	private void testRedisLock() {
 		log.info("-----------------------------------------------------------测试RedisLock");
@@ -145,38 +149,10 @@ public class DemoServiceRunner implements ApplicationRunner {
 		log.info("是否不允许增{}", bitPermission.isNotAllow(BitPermission.PERMISSION_INSERT));
 	}
 
-	/**
-	 * 写入文件到表
-	 * 配置
-	 * 	1.服务端：set global local_infile = 1;（查看：SHOW VARIABLES LIKE 'local_infile'）
-	 * 	2.客户端：url:jdbc:...&allowLoadLocalInfile=true
-	 * 测试数据：
-	 * 	10万：1.造文件1秒；2.导入表360秒
-	 * 	100万：1.造文件7秒；2.导入表372秒
-	 * 	1000万：1.造文件81秒；2.导入表431秒
-	 *
-	 * @throws SQLException
-	 */
-	private void testWriteFileToTable() throws SQLException {
-		log.info("-----------------------------------------------------------测试写文件到数据表");
-		String filePath = "/Users/hanxiaoxing/mydata/test.txt";
-		int count = 100001;
+	private void testMockTestFile(String filePath, int count) {
+		log.info("-----------------------------------------------------------测试模拟生成文件");
+		FileUtil.del(filePath);
 		long l = System.currentTimeMillis();
-		mockTestFile(filePath, count);
-		long l1 = System.currentTimeMillis();
-		log.info("已写入{}行数据, 用时{}ms", count, l1 - l);
-		Connection connection = dataSource.getConnection();
-		// 下列SQL去掉LOCAL后即为读取数据库本地文件的处理方式，需使用SHOW VARIABLES LIKE 'secure_file_priv'查看数据库允许路径
-		String sql = "LOAD DATA LOCAL INFILE ? INTO TABLE users FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n'";
-		PreparedStatement pstmt = connection.prepareStatement(sql);
-		pstmt.setString(1, filePath);
-		pstmt.execute();
-		long l2 = System.currentTimeMillis();
-		log.info("已导入{}行数据, 用时{}ms", count, l2 - l1);
-	}
-
-	private void mockTestFile(String filePath, int count) {
-		FileUtil.clean(filePath);
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 		String dateTime = formatter.format(LocalDateTime.now());
 		ArrayList<String> list = new ArrayList<>();
@@ -195,6 +171,35 @@ public class DemoServiceRunner implements ApplicationRunner {
 				log.info("已写入" + i + "行数据");
 			}
 		}
+		log.info("生成文件{}行，用时{}ms", count, System.currentTimeMillis() - l);
+	}
+
+	/**
+	 * 写入文件到表
+	 * 配置
+	 * 	1.服务端：set global local_infile = 1;（查看：SHOW VARIABLES LIKE 'local_infile'）
+	 * 	2.客户端：url:jdbc:...&allowLoadLocalInfile=true
+	 * 测试数据：
+	 *  1万：0.7秒
+	 * 	10万：2.9秒
+	 * 	100万：23.7秒
+	 * 	1000万：247.3秒
+	 *
+	 * @throws SQLException
+	 */
+	private void testWriteFileToTable(String filePath, int count) throws SQLException {
+		log.info("-----------------------------------------------------------测试写文件到数据表");
+		long l = System.currentTimeMillis();
+		Connection connection = dataSource.getConnection();
+		// 下列SQL去掉LOCAL后即为读取数据库本地文件的处理方式，需使用SHOW VARIABLES LIKE 'secure_file_priv'查看数据库允许路径
+		String sql = "LOAD DATA LOCAL INFILE ? INTO TABLE users FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n'";
+		PreparedStatement pstmt = connection.prepareStatement(sql);
+		pstmt.setString(1, filePath);
+		pstmt.execute();
+		log.info("已导入{}行数据, 用时{}ms", count, System.currentTimeMillis() - l);
+	}
+
+	private void testWriteFileToTable2(String filePath, int count) {
 	}
 
 	private void testSpringUtil() {

@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch.cat.indices.IndicesRecord;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
+import co.elastic.clients.json.JsonData;
 import com.example.demo.annotation.CustomerInfo;
 import com.example.demo.entity.User;
 import com.example.demo.interceptor.EncryptCommon;
@@ -77,21 +78,20 @@ public class DemoServiceRunner implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		String filePath = "/Users/hanxiaoxing/mydata/test.txt";
-		int count = 1000001;
 		scannerCustomInfo();
 		consoleEnvironment();
-		testSpringUtil();
-		testBitPermission();
-		testMyInvocationHandler();
-		testSdk();
-		testQuickSort();
-		testRestUtil();
-		testJsonUtil();
-		testSnowFlakeIdentity();
-		testRedisLock();
-		testMockTestFile(filePath, count);
-		testWriteFileToTable(filePath, count);
-		testElasticsearch();
+//		testSpringUtil();
+//		testBitPermission();
+//		testMyInvocationHandler();
+//		testSdk();
+//		testQuickSort();
+//		testRestUtil();
+//		testJsonUtil();
+//		testSnowFlakeIdentity();
+//		testRedisLock();
+//		testMockTestFile(filePath, 1000001);
+//		testWriteFileToTable(filePath);
+//		testElasticsearch();
 	}
 
 
@@ -186,7 +186,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 	 *
 	 * @throws SQLException
 	 */
-	private void testWriteFileToTable(String filePath, int count) throws SQLException {
+	private void testWriteFileToTable(String filePath) throws SQLException {
 		log.info("-----------------------------------------------------------测试写文件到数据表");
 		long l = System.currentTimeMillis();
 		Connection connection = dataSource.getConnection();
@@ -195,7 +195,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 		PreparedStatement pstmt = connection.prepareStatement(sql);
 		pstmt.setString(1, filePath);
 		pstmt.execute();
-		log.info("已导入{}行数据, 用时{}ms", count, System.currentTimeMillis() - l);
+		log.info("导入文件到数据库, 用时{}ms", System.currentTimeMillis() - l);
 	}
 
 	private void testSpringUtil() {
@@ -230,10 +230,15 @@ public class DemoServiceRunner implements ApplicationRunner {
 				.index(indexName)
 				.mappings(m -> m
 						.properties("id", p -> p.long_(d -> d))
-						.properties("username", p -> p.text(t -> t))
+						.properties("username", p -> p.text(t -> t
+								.analyzer("ik_smart")
+								.searchAnalyzer("ik_max_word")
+								.fields("keyword", f -> f.keyword(kw -> kw))
+						))
 						.properties("password", p -> p.keyword(d -> d))
 						.properties("phoneNumber", p -> p.keyword(d -> d))
-						.properties("birthday", p -> p.date(d -> d.format("yyyy-MM-dd HH:mm:ss")))
+						.properties("birthday", p -> p.date(d -> d
+								.format("yyyy-MM-dd HH:mm:ss")))
 				)
 		);
 		log.info("ES创建索引[{}]成功", indexName);
@@ -263,8 +268,8 @@ public class DemoServiceRunner implements ApplicationRunner {
 				.search(b -> b.index(indexName)
 						.query(q -> q.bool(b1 ->
 								b1.must(q1 -> q1.term(m -> m.field("username").value("赵六质检员")))
-//										.should(q2 -> q2.term(t -> t.field("phoneNumber").value("98765432101")))
-//										.filter(a -> a.range(t -> t.field("id").gte(JsonData.of(0))))
+										.should(q2 -> q2.term(t -> t.field("phoneNumber").value("98765432101")))
+										.filter(a -> a.range(t -> t.field("id").gte(JsonData.of(0))))
 						)), User.class
 				);
 		List<User> result = search.hits().hits().stream().map(Hit::source).collect(Collectors.toList());

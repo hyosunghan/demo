@@ -229,16 +229,29 @@ public class DemoServiceRunner implements ApplicationRunner {
 		elasticsearchClient.indices().create(b -> b
 				.index(indexName)
 				.mappings(m -> m
-						.properties("id", p -> p.long_(d -> d))
-						.properties("username", p -> p.text(t -> t
-								.analyzer("ik_smart")
-								.searchAnalyzer("ik_max_word")
-								.fields("keyword", f -> f.keyword(kw -> kw))
-						))
-						.properties("password", p -> p.keyword(d -> d))
-						.properties("phoneNumber", p -> p.keyword(d -> d))
-						.properties("birthday", p -> p.date(d -> d
-								.format("yyyy-MM-dd HH:mm:ss")))
+						.properties("id", p -> p
+								.long_(d -> d)
+						)
+						.properties("username", p -> p
+								.text(t -> t
+										.analyzer("ik_smart")
+										.searchAnalyzer("ik_max_word")
+										.fields("keyword", f -> f
+												.keyword(kw -> kw)
+										)
+								)
+						)
+						.properties("password", p -> p
+								.keyword(d -> d)
+						)
+						.properties("phoneNumber", p -> p
+								.keyword(d -> d)
+						)
+						.properties("birthday", p -> p
+								.date(d -> d
+										.format("yyyy-MM-dd HH:mm:ss")
+								)
+						)
 				)
 		);
 		log.info("ES创建索引[{}]成功", indexName);

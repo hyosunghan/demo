@@ -4,10 +4,12 @@ import cn.hutool.core.io.FileUtil;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.cat.IndicesResponse;
 import co.elastic.clients.elasticsearch.cat.indices.IndicesRecord;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
 import co.elastic.clients.json.JsonData;
+import co.elastic.clients.util.ObjectBuilder;
 import com.example.demo.annotation.CustomerInfo;
 import com.example.demo.entity.User;
 import com.example.demo.interceptor.EncryptCommon;
@@ -51,6 +53,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -221,71 +224,85 @@ public class DemoServiceRunner implements ApplicationRunner {
 		// 索引是否存在
 		boolean exists = elasticsearchClient.indices().exists(a -> a.index(indexName)).value();
 		if (exists) {
-			// 删除索引
-			elasticsearchClient.indices().delete(a -> a.index(indexName));
-			log.info("ES索引[{}]已存在, 已删除", indexName);
+//			// 删除索引
+//			elasticsearchClient.indices().delete(a -> a.index(indexName));
+//			log.info("ES索引[{}]已存在, 已删除", indexName);
+		} else {
+			// 创建索引
+			elasticsearchClient.indices().create(b -> b
+					.index(indexName)
+					.mappings(m -> m
+							.properties("id", p -> p
+									.long_(d -> d)
+							)
+							.properties("username", p -> p
+									.text(t -> t
+											.analyzer("ik_smart")
+											.searchAnalyzer("ik_max_word")
+											.fields("keyword", f -> f
+													.keyword(kw -> kw)
+											)
+									)
+							)
+							.properties("password", p -> p
+									.keyword(d -> d)
+							)
+							.properties("phoneNumber", p -> p
+									.keyword(d -> d)
+							)
+							.properties("birthday", p -> p
+									.date(d -> d
+											.format("yyyy-MM-dd HH:mm:ss")
+									)
+							)
+					)
+			);
+			log.info("ES创建索引[{}]成功", indexName);
+			// 获取索引
+			GetIndexResponse getIndexResponse = elasticsearchClient.indices().get(a -> a.index(indexName));
+			log.info("ES索引[{}]信息: {}", indexName, JsonUtil.writeValueAsString(getIndexResponse.result().get(indexName)));
+			// 创建文档
+			User user1 = new User(1L, "张三1", "123456", "12345678901", new Date());
+			elasticsearchClient.index(b -> b.index(indexName).id(user1.getId().toString()).document(user1));
+			User user2 = new User(2L, "李四黑", "456789", "13245678901", new Date());
+			elasticsearchClient.index(b -> b.index(indexName).id(user2.getId().toString()).document(user2));
+			User user3 = new User(3L, "王五", "78910JQ", "12435678901", new Date());
+			elasticsearchClient.index(b -> b.index(indexName).id(user3.getId().toString()).document(user3));
+			User user4 = new User(4L, "赵六质检员", "910JQKA", "98765432101", new Date());
+			elasticsearchClient.index(b -> b.index(indexName).id(user4.getId().toString()).document(user4));
+			log.info("ES插入数据成功");
+			// 修改文档
+			user1.setUsername("张三 黑马程序员");
+			elasticsearchClient.update(b -> b.index(indexName).id(user1.getId().toString()).doc(user1), User.class);
+			log.info("ES修改数据成功");
+			// 删除文档
+			elasticsearchClient.delete(b -> b.index(indexName).id(user3.getId().toString()));
+			log.info("ES删除数据成功");
 		}
-		// 创建索引
-		elasticsearchClient.indices().create(b -> b
-				.index(indexName)
-				.mappings(m -> m
-						.properties("id", p -> p
-								.long_(d -> d)
-						)
-						.properties("username", p -> p
-								.text(t -> t
-										.analyzer("ik_smart")
-										.searchAnalyzer("ik_max_word")
-										.fields("keyword", f -> f
-												.keyword(kw -> kw)
-										)
-								)
-						)
-						.properties("password", p -> p
-								.keyword(d -> d)
-						)
-						.properties("phoneNumber", p -> p
-								.keyword(d -> d)
-						)
-						.properties("birthday", p -> p
-								.date(d -> d
-										.format("yyyy-MM-dd HH:mm:ss")
-								)
-						)
-				)
-		);
-		log.info("ES创建索引[{}]成功", indexName);
-		// 获取索引
-		GetIndexResponse getIndexResponse = elasticsearchClient.indices().get(a -> a.index(indexName));
-		log.info("ES索引[{}]信息: {}", indexName, JsonUtil.writeValueAsString(getIndexResponse.result().get(indexName)));
-		// 创建文档
-		User user1 = new User(1L, "张三1", "123456", "12345678901", new Date());
-		elasticsearchClient.index(b -> b.index(indexName).id(user1.getId().toString()).document(user1));
-		User user2 = new User(2L, "李四黑", "456789", "13245678901", new Date());
-		elasticsearchClient.index(b -> b.index(indexName).id(user2.getId().toString()).document(user2));
-		User user3 = new User(3L, "王五", "78910JQ", "12435678901", new Date());
-		elasticsearchClient.index(b -> b.index(indexName).id(user3.getId().toString()).document(user3));
-		User user4 = new User(4L, "赵六质检员", "910JQKA", "98765432101", new Date());
-		elasticsearchClient.index(b -> b.index(indexName).id(user4.getId().toString()).document(user4));
-		log.info("ES插入数据成功");
-		// 修改文档
-		user1.setUsername("张三 黑马程序员");
-		elasticsearchClient.update(b -> b.index(indexName).id(user1.getId().toString()).doc(user1), User.class);
-		log.info("ES修改数据成功");
-		// 删除文档
-		elasticsearchClient.delete(b -> b.index(indexName).id(user3.getId().toString()));
-		log.info("ES删除数据成功");
 
-		// 查询文档
-		SearchResponse<User> search = elasticsearchClient
-				.search(b -> b.index(indexName)
-						.query(q -> q.bool(b1 ->
-								b1.must(q1 -> q1.term(m -> m.field("username").value("赵六质检员")))
-										.should(q2 -> q2.term(t -> t.field("phoneNumber").value("98765432101")))
-										.filter(a -> a.range(t -> t.field("id").gte(JsonData.of(0))))
-						)), User.class
-				);
-		List<User> result = search.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+//		// 查询文档
+//		BoolQuery.Builder bool = QueryBuilders.bool();
+//		bool.must(q -> q.term(m -> m.field("username").value("张三")));
+//		bool.must(q -> q.match(m -> m.field("username").query("张三")));
+//		bool.must(q -> q.range(r -> r.field("id").gte(JsonData.of(0))));
+//		bool.should(q -> q.match(m -> m.field("username").query("张三")));
+//		bool.filter(q -> q.match(m -> m.field("username").query("张三")));
+//		BoolQuery query = bool.build();
+//		SearchResponse<User> search = elasticsearchClient.search(b -> b.index(indexName).query(query._toQuery()), User.class);
+
+		Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>> function = a -> a
+				.index(indexName)
+				.query(query -> query
+						.bool(b -> b
+								.must(q -> q.term(m -> m.field("username").value("张三")))
+								.must(q -> q.match(m -> m.field("username").query("张三")))
+								.must(q -> q.range(r -> r.field("id").gte(JsonData.of(0))))
+								.should(q -> q.match(m -> m.field("username").query("张三")))
+								.filter(q -> q.match(m -> m.field("username").query("张三")))
+						));
+		SearchResponse<User> search1 = elasticsearchClient.search(function, User.class);
+
+		List<User> result = search1.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
 		log.info("ES查询结果：{}", JsonUtil.writeValueAsString(result));
 	}
 

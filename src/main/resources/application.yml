@@ -28,6 +28,8 @@ elasticsearch:
     host: 192.168.3.21
     port: 9200
     scheme: http
+    username: elastic
+    password: elastic
 
 # health配置
 management:

@@ -16,6 +16,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.Locale;
 
 @Slf4j
@@ -32,6 +33,9 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
 
     @Override
     public Object beforeBodyWrite(Object o, MethodParameter methodParameter, MediaType mediaType, Class aClass, ServerHttpRequest serverHttpRequest, ServerHttpResponse serverHttpResponse) {
+        if (Arrays.asList("text/html", "text/css").contains(mediaType.toString())) {
+            return o;
+        }
         Result<?> result;
         if (o instanceof Result) {
             result = JsonUtil.writeObjectAsObject(o, Result.class);

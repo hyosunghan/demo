@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
+import com.example.demo.entity.Users;
 import com.example.demo.mapper.UserMapper;
-import com.example.demo.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +14,7 @@ public class UserServiceImpl implements UserService {
     private UserMapper userMapper;
 
     @Override
-    public List<User> testMapper() {
+    public List<Users> testMapper() {
         return userMapper.testMapper();
     }
 }

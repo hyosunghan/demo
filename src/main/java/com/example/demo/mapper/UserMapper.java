@@ -1,6 +1,6 @@
 package com.example.demo.mapper;
 
-import com.example.demo.entity.User;
+import com.example.demo.entity.Users;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -8,5 +8,7 @@ import java.util.List;
 @Mapper
 public interface UserMapper {
 
-    List<User> testMapper();
+    Users findByUsername(String username);
+
+    List<Users> testMapper();
 }

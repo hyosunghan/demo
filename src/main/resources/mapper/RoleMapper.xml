@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.RoleMapper">
+
+    <resultMap id="RoleResultMap" type="com.example.demo.entity.Role">
+        <id property="id" column="id" />
+        <result property="roleName" column="role_name" />
+    </resultMap>
+
+    <select id="listByUserId" resultMap="RoleResultMap">
+        SELECT r.id,r.role_name FROM role r,users_role ur WHERE r.id=ur.role_id AND ur.users_id=#{userId}
+    </select>
+</mapper>

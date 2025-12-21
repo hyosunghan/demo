@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.entity.User;
+import com.example.demo.entity.Users;
 import com.example.demo.lock.annotation.RedisLock;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,8 +15,8 @@ public class TestServiceImpl implements TestService {
     }
 
     @Override
-    @RedisLock(name = "LOCK:USER", keys = {"#id", "#user.username"})
-    public void testLock(Long id, User user) {
+    @RedisLock(name = "LOCK:USERS", keys = {"#id", "#users.username"})
+    public void testLock(Long id, Users users) {
         try {
             log.info("业务逻辑开始");
             Thread.sleep(7000);

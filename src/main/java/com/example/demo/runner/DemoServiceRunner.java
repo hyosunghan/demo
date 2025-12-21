@@ -11,7 +11,7 @@ import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.util.ObjectBuilder;
 import com.example.demo.annotation.CustomerInfo;
-import com.example.demo.entity.User;
+import com.example.demo.entity.Users;
 import com.example.demo.interceptor.EncryptCommon;
 import com.example.demo.sdk.IPlatformService;
 import com.example.demo.sdk.dto.AuthRequest;
@@ -100,9 +100,9 @@ public class DemoServiceRunner implements ApplicationRunner {
 
 	private void testRedisLock() {
 		log.info("-----------------------------------------------------------测试RedisLock");
-		User user = new User(1L, "张三", "123456", "12345678901", new Date());
-		new Thread(()-> testService.testLock(1L, user)).start();
-		testService.testLock(1L, user);
+		Users users = new Users(1L, "张三", "123456", "12345678901", new Date());
+		new Thread(()-> testService.testLock(1L, users)).start();
+		testService.testLock(1L, users);
 	}
 
 	private void testSnowFlakeIdentity() {
@@ -204,14 +204,14 @@ public class DemoServiceRunner implements ApplicationRunner {
 	private void testSpringUtil() {
 		log.info("-----------------------------------------------------------测试SpringUtil");
 		String beanName = "user";
-		User user = new User(1L, "张三", "123456", "12345678901", new Date());
-		SpringUtil.registerBean(beanName, user);
-		user = SpringUtil.getBean(beanName, User.class);
-		log.info("注册的用户Bean为：" + user.getUsername());
-		User newUser = new User(4L, "李四", "123456", "12345678901", new Date());
-		SpringUtil.replaceBean(beanName, newUser);
-		newUser = SpringUtil.getBean(beanName, User.class);
-		log.info("替换的用户Bean为：" + newUser.getUsername());
+		Users users = new Users(1L, "张三", "123456", "12345678901", new Date());
+		SpringUtil.registerBean(beanName, users);
+		users = SpringUtil.getBean(beanName, Users.class);
+		log.info("注册的用户Bean为：" + users.getUsername());
+		Users newUsers = new Users(4L, "李四", "123456", "12345678901", new Date());
+		SpringUtil.replaceBean(beanName, newUsers);
+		newUsers = SpringUtil.getBean(beanName, Users.class);
+		log.info("替换的用户Bean为：" + newUsers.getUsername());
 	}
 
 	private void testElasticsearch() throws IOException {
@@ -262,21 +262,21 @@ public class DemoServiceRunner implements ApplicationRunner {
 			GetIndexResponse getIndexResponse = elasticsearchClient.indices().get(a -> a.index(indexName));
 			log.info("ES索引[{}]信息: {}", indexName, JsonUtil.writeValueAsString(getIndexResponse.result().get(indexName)));
 			// 创建文档
-			User user1 = new User(1L, "张三1", "123456", "12345678901", new Date());
-			elasticsearchClient.index(b -> b.index(indexName).id(user1.getId().toString()).document(user1));
-			User user2 = new User(2L, "李四黑", "456789", "13245678901", new Date());
-			elasticsearchClient.index(b -> b.index(indexName).id(user2.getId().toString()).document(user2));
-			User user3 = new User(3L, "王五", "78910JQ", "12435678901", new Date());
-			elasticsearchClient.index(b -> b.index(indexName).id(user3.getId().toString()).document(user3));
-			User user4 = new User(4L, "赵六质检员", "910JQKA", "98765432101", new Date());
-			elasticsearchClient.index(b -> b.index(indexName).id(user4.getId().toString()).document(user4));
+			Users users1 = new Users(1L, "张三1", "123456", "12345678901", new Date());
+			elasticsearchClient.index(b -> b.index(indexName).id(users1.getId().toString()).document(users1));
+			Users users2 = new Users(2L, "李四黑", "456789", "13245678901", new Date());
+			elasticsearchClient.index(b -> b.index(indexName).id(users2.getId().toString()).document(users2));
+			Users users3 = new Users(3L, "王五", "78910JQ", "12435678901", new Date());
+			elasticsearchClient.index(b -> b.index(indexName).id(users3.getId().toString()).document(users3));
+			Users users4 = new Users(4L, "赵六质检员", "910JQKA", "98765432101", new Date());
+			elasticsearchClient.index(b -> b.index(indexName).id(users4.getId().toString()).document(users4));
 			log.info("ES插入数据成功");
 			// 修改文档
-			user1.setUsername("张三 黑马程序员");
-			elasticsearchClient.update(b -> b.index(indexName).id(user1.getId().toString()).doc(user1), User.class);
+			users1.setUsername("张三 黑马程序员");
+			elasticsearchClient.update(b -> b.index(indexName).id(users1.getId().toString()).doc(users1), Users.class);
 			log.info("ES修改数据成功");
 			// 删除文档
-			elasticsearchClient.delete(b -> b.index(indexName).id(user3.getId().toString()));
+			elasticsearchClient.delete(b -> b.index(indexName).id(users3.getId().toString()));
 			log.info("ES删除数据成功");
 		}
 
@@ -300,9 +300,9 @@ public class DemoServiceRunner implements ApplicationRunner {
 								.should(q -> q.match(m -> m.field("username").query("张三")))
 								.filter(q -> q.match(m -> m.field("username").query("张三")))
 						));
-		SearchResponse<User> search1 = elasticsearchClient.search(function, User.class);
+		SearchResponse<Users> search1 = elasticsearchClient.search(function, Users.class);
 
-		List<User> result = search1.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+		List<Users> result = search1.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
 		log.info("ES查询结果：{}", JsonUtil.writeValueAsString(result));
 	}
 

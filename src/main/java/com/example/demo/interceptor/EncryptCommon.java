@@ -25,9 +25,6 @@ public class EncryptCommon {
         if ("phoneNumber".equals(fieldName)) {
             return DesensitizedUtil.mobilePhone(value);
         }
-        if ("password".equals(fieldName)) {
-            return DesensitizedUtil.password(value);
-        }
         return value;
     }
 

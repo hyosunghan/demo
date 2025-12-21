@@ -3,6 +3,10 @@ server:
   servlet:
     context-path: /api
 spring:
+  security:
+    user: # httpBasic使用，不配置该用户会在控制台生成默认的user,xxxxxxxx
+      name: admin
+      password: 8888
   application:
     name: demo
   datasource:

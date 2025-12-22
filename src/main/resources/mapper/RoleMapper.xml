@@ -7,7 +7,9 @@
         <result property="roleName" column="role_name" />
     </resultMap>
 
-    <select id="listByUserId" resultMap="RoleResultMap">
-        SELECT r.id,r.role_name FROM role r,users_role ur WHERE r.id=ur.role_id AND ur.users_id=#{userId}
+    <select id="listByUsername" resultMap="RoleResultMap">
+        SELECT r.id,r.role_name
+        FROM role r,users_role ur,users u
+        WHERE r.id=ur.role_id AND ur.users_id=u.id AND u.username=#{username}
     </select>
 </mapper>

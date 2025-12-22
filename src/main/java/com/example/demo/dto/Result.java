@@ -17,12 +17,20 @@ public class Result<T> {
         this.data = data;
     }
 
+    public static <T> Result<T> success() {
+        return new Result<>(200, "success.message", null);
+    }
+
     public static <T> Result<T> success(T data) {
         return new Result<>(200, "success.message", data);
     }
 
     public static <T> Result<T> failure(int code, String message) {
         return new Result<>(code, message, null);
+    }
+
+    public static <T> Result<T> failure(String message) {
+        return new Result<>(500, message, null);
     }
 
 }

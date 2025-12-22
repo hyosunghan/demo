@@ -2,6 +2,7 @@ package com.example.demo.advice;
 
 import com.example.demo.dto.Result;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -32,6 +33,12 @@ public class GlobalExceptionHandler {
     public Result<?> handleNoSuchMessageException(NoSuchMessageException e) {
         log.error("无国际化异常");
         return Result.failure(500, "failure.message");
+    }
+
+    @ExceptionHandler(value = AuthorizationException.class)
+    public Result<?> handleAuthorizationException() {
+        log.error("授权异常");
+        return Result.failure(403, "failure.message");
     }
 
     @ResponseStatus(HttpStatus.OK)

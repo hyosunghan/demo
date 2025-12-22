@@ -1,7 +1,7 @@
 server:
   port: 8081
   servlet:
-    context-path: /api
+    context-path: /
 spring:
   security:
     user: # httpBasic使用，不配置该用户会在控制台生成默认的user,xxxxxxxx

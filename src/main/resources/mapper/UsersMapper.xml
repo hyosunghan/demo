@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.demo.mapper.UserMapper">
+<mapper namespace="com.example.demo.mapper.UsersMapper">
 
     <resultMap id="UserResultMap" type="com.example.demo.entity.Users">
         <id property="id" column="id" />
@@ -8,13 +8,14 @@
         <result property="password" column="password" />
         <result property="phoneNumber" column="phone_number" />
         <result property="birthday" column="birthday" />
+        <result property="status" column="status" />
     </resultMap>
 
     <select id="findByUsername" resultMap="UserResultMap">
-        SELECT id,username,password,phone_number,birthday FROM users WHERE username = #{username}
+        SELECT id,username,password,phone_number,birthday,status FROM users WHERE username = #{username}
     </select>
 
     <select id="testMapper" resultMap="UserResultMap">
-        SELECT id,username,password,phone_number,birthday FROM users
+        SELECT id,username,password,phone_number,birthday,status FROM users
     </select>
 </mapper>

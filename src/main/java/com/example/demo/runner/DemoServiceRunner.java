@@ -100,7 +100,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 
 	private void testRedisLock() {
 		log.info("-----------------------------------------------------------测试RedisLock");
-		Users users = new Users(1L, "张三", "123456", "12345678901", new Date());
+		Users users = new Users(1L, "张三", "123456", "12345678901", new Date(), 1);
 		new Thread(()-> testService.testLock(1L, users)).start();
 		testService.testLock(1L, users);
 	}
@@ -204,11 +204,11 @@ public class DemoServiceRunner implements ApplicationRunner {
 	private void testSpringUtil() {
 		log.info("-----------------------------------------------------------测试SpringUtil");
 		String beanName = "user";
-		Users users = new Users(1L, "张三", "123456", "12345678901", new Date());
+		Users users = new Users(1L, "张三", "123456", "12345678901", new Date(), 1);
 		SpringUtil.registerBean(beanName, users);
 		users = SpringUtil.getBean(beanName, Users.class);
 		log.info("注册的用户Bean为：" + users.getUsername());
-		Users newUsers = new Users(4L, "李四", "123456", "12345678901", new Date());
+		Users newUsers = new Users(4L, "李四", "123456", "12345678901", new Date(), 1);
 		SpringUtil.replaceBean(beanName, newUsers);
 		newUsers = SpringUtil.getBean(beanName, Users.class);
 		log.info("替换的用户Bean为：" + newUsers.getUsername());
@@ -262,13 +262,13 @@ public class DemoServiceRunner implements ApplicationRunner {
 			GetIndexResponse getIndexResponse = elasticsearchClient.indices().get(a -> a.index(indexName));
 			log.info("ES索引[{}]信息: {}", indexName, JsonUtil.writeValueAsString(getIndexResponse.result().get(indexName)));
 			// 创建文档
-			Users users1 = new Users(1L, "张三1", "123456", "12345678901", new Date());
+			Users users1 = new Users(1L, "张三1", "123456", "12345678901", new Date(), 1);
 			elasticsearchClient.index(b -> b.index(indexName).id(users1.getId().toString()).document(users1));
-			Users users2 = new Users(2L, "李四黑", "456789", "13245678901", new Date());
+			Users users2 = new Users(2L, "李四黑", "456789", "13245678901", new Date(), 1);
 			elasticsearchClient.index(b -> b.index(indexName).id(users2.getId().toString()).document(users2));
-			Users users3 = new Users(3L, "王五", "78910JQ", "12435678901", new Date());
+			Users users3 = new Users(3L, "王五", "78910JQ", "12435678901", new Date(), 1);
 			elasticsearchClient.index(b -> b.index(indexName).id(users3.getId().toString()).document(users3));
-			Users users4 = new Users(4L, "赵六质检员", "910JQKA", "98765432101", new Date());
+			Users users4 = new Users(4L, "赵六质检员", "910JQKA", "98765432101", new Date(), 1);
 			elasticsearchClient.index(b -> b.index(indexName).id(users4.getId().toString()).document(users4));
 			log.info("ES插入数据成功");
 			// 修改文档

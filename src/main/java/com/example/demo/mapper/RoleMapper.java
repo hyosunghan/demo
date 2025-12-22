@@ -8,5 +8,5 @@ import java.util.List;
 @Mapper
 public interface RoleMapper {
 
-    List<Role> listByUserId(Long userId);
+    List<Role> listByUsername(String username);
 }

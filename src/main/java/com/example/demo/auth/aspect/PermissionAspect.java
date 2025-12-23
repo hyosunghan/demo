@@ -1,5 +1,6 @@
-package com.example.demo.auth;
+package com.example.demo.auth.aspect;
 
+import com.example.demo.auth.annotation.RequirePermission;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.subject.Subject;

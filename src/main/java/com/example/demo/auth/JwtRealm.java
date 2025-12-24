@@ -13,12 +13,18 @@ import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+
+import java.util.concurrent.TimeUnit;
 
 
 public class JwtRealm extends AuthorizingRealm {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public boolean supports(AuthenticationToken token) {
@@ -61,10 +67,16 @@ public class JwtRealm extends AuthorizingRealm {
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
 //        System.out.println("5 doGetAuthorizationInfo");
         String username = (String) principals.getPrimaryPrincipal();
-        SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
+        String cacheKey = "shiro:auth:" + username;
         // 从数据库或缓存获取用户角色权限
-        info.setRoles(userService.getUserRoles(username));
-        info.setStringPermissions(userService.getUserPermissions(username));
-        return info;
+        AuthorizationInfo authorizationInfo = (AuthorizationInfo) redisTemplate.opsForValue().get(cacheKey);
+        if (authorizationInfo != null) {
+            return authorizationInfo;
+        }
+        SimpleAuthorizationInfo simpleAuthorizationInfo = new SimpleAuthorizationInfo();
+        simpleAuthorizationInfo.setRoles(userService.getUserRoles(username));
+        simpleAuthorizationInfo.setStringPermissions(userService.getUserPermissions(username));
+        redisTemplate.opsForValue().set(cacheKey, simpleAuthorizationInfo, 1, TimeUnit.DAYS);
+        return simpleAuthorizationInfo;
     }
 }

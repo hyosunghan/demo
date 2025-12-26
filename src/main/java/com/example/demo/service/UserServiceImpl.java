@@ -28,11 +28,6 @@ public class UserServiceImpl implements UserService {
     private PermissionMapper permissionMapper;
 
     @Override
-    public List<Users> testMapper() {
-        return usersMapper.testMapper();
-    }
-
-    @Override
     public boolean checkUser(Users users) {
         if (StringUtils.isEmpty(users.getUsername()) || StringUtils.isEmpty(users.getPassword())) {
             return false;

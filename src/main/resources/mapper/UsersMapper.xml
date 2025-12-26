@@ -14,8 +14,4 @@
     <select id="findByUsername" resultMap="UserResultMap">
         SELECT id,username,password,phone_number,birthday,status FROM users WHERE username = #{username}
     </select>
-
-    <select id="testMapper" resultMap="UserResultMap">
-        SELECT id,username,password,phone_number,birthday,status FROM users
-    </select>
 </mapper>

@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,9 +24,20 @@ public class RestUtil {
         return responseEntity.getBody();
     }
 
+    public static  <T> T post(String url, Object body, Class<T> responseClass, Map<String, Object> uriVariables) {
+        ResponseEntity<T> responseEntity = restTemplate.postForEntity(url, body, responseClass, uriVariables);
+        checkHttpStatus(responseEntity);
+        return responseEntity.getBody();
+    }
 
     public static  <T> T post(String url, Object request, Class<T> responseClass) {
         ResponseEntity<T> responseEntity = restTemplate.postForEntity(url, request, responseClass, setDefaultHeaders());
+        checkHttpStatus(responseEntity);
+        return responseEntity.getBody();
+    }
+
+    public static  <T> T post(URI url, Object body, Class<T> responseClass) {
+        ResponseEntity<T> responseEntity = restTemplate.postForEntity(url, body, responseClass);
         checkHttpStatus(responseEntity);
         return responseEntity.getBody();
     }

@@ -13,10 +13,6 @@ import co.elastic.clients.util.ObjectBuilder;
 import com.example.demo.annotation.CustomerInfo;
 import com.example.demo.entity.Users;
 import com.example.demo.interceptor.EncryptCommon;
-import com.example.demo.sdk.IPlatformService;
-import com.example.demo.sdk.dto.AuthRequest;
-import com.example.demo.sdk.dto.AuthResponse;
-import com.example.demo.sdk.dto.PlatformEnum;
 import com.example.demo.service.TestService;
 import com.example.demo.service.TestServiceImpl;
 import com.example.demo.utils.BitPermission;
@@ -67,9 +63,6 @@ public class DemoServiceRunner implements ApplicationRunner {
 	private ServerProperties serverProperties;
 
 	@Autowired
-	private IPlatformService platformService;
-
-	@Autowired
 	private ElasticsearchClient elasticsearchClient;
 
 	@Autowired
@@ -86,7 +79,6 @@ public class DemoServiceRunner implements ApplicationRunner {
 //		testSpringUtil();
 //		testBitPermission();
 //		testMyInvocationHandler();
-//		testSdk();
 //		testQuickSort();
 //		testRestUtil();
 //		testJsonUtil();
@@ -304,14 +296,6 @@ public class DemoServiceRunner implements ApplicationRunner {
 
 		List<Users> result = search1.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
 		log.info("ES查询结果：{}", JsonUtil.writeValueAsString(result));
-	}
-
-	private void testSdk() {
-		log.info("-----------------------------------------------------------测试SDK");
-		AuthRequest authRequest = new AuthRequest();
-		authRequest.setPlatform(PlatformEnum._1688);
-		AuthResponse authResponse = platformService.refreshAccessToken(authRequest);
-		log.info("refreshAccessToken: {}", JsonUtil.writeValueAsString(authResponse));
 	}
 
 	private void consoleEnvironment() throws UnknownHostException {

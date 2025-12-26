@@ -63,3 +63,14 @@ platform:
   1688:
     app-id: 111
     app-secret: 222
+    app-token: 333
+    product-collection-ids: 444 # 多个货盘用“,”拼接
+    default-lang: zh_CN   # 默认语言
+    default-currency: CNY # 默认币种
+    fix-profit: 10.00 # 固定利润
+    rate-profit: 10.00 # 百分比利润
+  jdipp:
+    app-id: 555
+    app-secret: 666
+    fix-profit: 10.00 # 固定利润
+    rate-profit: 10.00 # 百分比利润

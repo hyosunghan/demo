@@ -7,8 +7,10 @@ import com.example.demo.entity.Users;
 import com.example.demo.service.UserService;
 import com.example.demo.service.TestService;
 import com.example.demo.utils.JwtUtil;
+import com.example.demo.utils.RestUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.web.server.ManagementServerProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,8 +34,11 @@ public class TestController {
     @Value("${test.message:null}")
     private String message;
 
+    @Autowired
+    private ManagementServerProperties managementServerProperties;
+
     @PostMapping("/login")
-    public Result login(@RequestBody LoginDto dto) {
+    public Object login(@RequestBody LoginDto dto) {
         // 1. 验证用户名密码
         boolean result = userService.checkUser(dto.getUsername(), dto.getPassword());
         if (!result) {
@@ -49,13 +54,13 @@ public class TestController {
         HashMap<String, String> map = new HashMap<>();
         map.put("token", token);
         map.put("expire", String.valueOf(JwtUtil.EXPIRATION));
-        return Result.success(map);
+        return map;
     }
 
     @GetMapping("/nacos")
     @RequirePermission("user:user")
     public Object nacos() {
-        return Result.success(message);
+        return message;
     }
 
     @GetMapping("/lock")
@@ -65,6 +70,11 @@ public class TestController {
         users.setUsername("张三");
         new Thread(()-> testService.testLock(1L, users)).start();
         new Thread(()-> testService.testLock(1L, users)).start();
-        return 2;
+        return users;
+    }
+
+    @GetMapping("/actuator")
+    public Object actuator() {
+        return RestUtil.get(System.getProperty("x.actuatorEndpoint"), Result.class);
     }
 }

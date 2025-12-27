@@ -35,7 +35,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
 
     @Override
     public Object beforeBodyWrite(Object o, MethodParameter methodParameter, MediaType mediaType, Class aClass, ServerHttpRequest serverHttpRequest, ServerHttpResponse serverHttpResponse) {
-        if (Arrays.asList("text/html", "text/css").contains(mediaType.toString())) {
+        if (Arrays.asList("text/html", "text/css", "text/plain").contains(mediaType.toString())) {
             return o;
         }
         Result<?> result;

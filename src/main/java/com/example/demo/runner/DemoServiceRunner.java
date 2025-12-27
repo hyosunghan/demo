@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.actuate.autoconfigure.web.server.ManagementServerProperties;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.stereotype.Component;
 
@@ -61,6 +62,9 @@ public class DemoServiceRunner implements ApplicationRunner {
 
 	@Autowired
 	private ServerProperties serverProperties;
+
+	@Autowired
+	private ManagementServerProperties managementServerProperties;
 
 	@Autowired
 	private ElasticsearchClient elasticsearchClient;
@@ -301,9 +305,16 @@ public class DemoServiceRunner implements ApplicationRunner {
 	private void consoleEnvironment() throws UnknownHostException {
 		String host = InetAddress.getLocalHost().getHostAddress();
 		Integer port = serverProperties.getPort();
+		Integer managePort = managementServerProperties.getPort();
 		String context = serverProperties.getServlet().getContextPath();
-		String contextEndpoint = "http://" + host + ":" + port + context + "/swagger-ui.html";
+		String manageContext = managementServerProperties.getServlet().getContextPath();
+		String contextEndpoint = "http://" + host + ":" + port + context;
 		log.info("contextEndpoint: {}", contextEndpoint);
+		String swaggerEndpoint = "http://" + host + ":" + port + context + "/swagger-ui.html";
+		log.info("swaggerEndpoint: {}", swaggerEndpoint);
+		String actuatorEndpoint = "http://" + host + ":" + managePort + manageContext + "/actuator";
+		System.setProperty("x.actuatorEndpoint", actuatorEndpoint);
+		log.info("actuatorEndpoint: {}", actuatorEndpoint);
 	}
 
 	private void scannerCustomInfo() {

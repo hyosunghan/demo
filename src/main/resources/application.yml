@@ -36,12 +36,18 @@ elasticsearch:
 # health配置
 management:
   endpoints:
+    shutdown:
+      enabled: true
     web:
       exposure:
         include: "*"
   endpoint:
     health:
       show-details: always
+  server:
+    port: 8082
+    servlet:
+      context-path: /monitor
 
 # mybatis配置
 mybatis:

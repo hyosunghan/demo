@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.auth.annotation.RequirePermission;
+import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.Result;
 import com.example.demo.entity.Users;
 import com.example.demo.service.UserService;
@@ -32,9 +33,9 @@ public class TestController {
     private String message;
 
     @PostMapping("/login")
-    public Result login(@RequestBody Users dto) {
+    public Result login(@RequestBody LoginDto dto) {
         // 1. 验证用户名密码
-        boolean result = userService.checkUser(dto);
+        boolean result = userService.checkUser(dto.getUsername(), dto.getPassword());
         if (!result) {
             return Result.failure(400,"用户名或密码错误");
         }
@@ -53,13 +54,13 @@ public class TestController {
 
     @GetMapping("/nacos")
     @RequirePermission("user:user")
-    public Object test() {
+    public Object nacos() {
         return Result.success(message);
     }
 
     @GetMapping("/lock")
     @RequirePermission("user:add")
-    public Object testLock() {
+    public Object lock() {
         Users users = new Users();
         users.setUsername("张三");
         new Thread(()-> testService.testLock(1L, users)).start();

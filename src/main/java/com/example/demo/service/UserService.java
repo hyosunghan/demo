@@ -6,7 +6,7 @@ import java.util.Set;
 
 public interface UserService {
 
-    boolean checkUser(Users users);
+    boolean checkUser(String username, String password);
 
     Users getUser(String username);
 

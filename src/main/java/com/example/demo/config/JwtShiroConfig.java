@@ -57,8 +57,18 @@ public class JwtShiroConfig {
 
         // 拦截规则
         Map<String, String> filterChain = new LinkedHashMap<>();
-        filterChain.put("/test/login", "anon");  // 登录接口放行
-        filterChain.put("/**", "jwt");      // 其他请求需JWT验证
+        // 登录接口放行
+        filterChain.put("/test/login", "anon");
+        // swagger放行
+        filterChain.put("/swagger-ui.html", "anon");
+        filterChain.put("/webjars/**", "anon");
+        filterChain.put("/swagger-resources/**", "anon");
+        filterChain.put("/v2/api-docs", "anon");
+        filterChain.put("/csrf", "anon");
+        filterChain.put("/v3/api-docs", "anon");
+        filterChain.put("/doc.html", "anon");
+        // 其他请求需JWT验证
+        filterChain.put("/**", "jwt");
         factory.setFilterChainDefinitionMap(filterChain);
 
         return factory;

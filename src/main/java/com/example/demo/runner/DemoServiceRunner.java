@@ -302,7 +302,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 		String host = InetAddress.getLocalHost().getHostAddress();
 		Integer port = serverProperties.getPort();
 		String context = serverProperties.getServlet().getContextPath();
-		String contextEndpoint = "http://" + host + ":" + port + context;
+		String contextEndpoint = "http://" + host + ":" + port + context + "/swagger-ui.html";
 		log.info("contextEndpoint: {}", contextEndpoint);
 	}
 

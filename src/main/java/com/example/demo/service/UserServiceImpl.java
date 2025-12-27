@@ -28,13 +28,13 @@ public class UserServiceImpl implements UserService {
     private PermissionMapper permissionMapper;
 
     @Override
-    public boolean checkUser(Users users) {
-        if (StringUtils.isEmpty(users.getUsername()) || StringUtils.isEmpty(users.getPassword())) {
+    public boolean checkUser(String username, String password) {
+        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
             return false;
         }
-        Users find = usersMapper.findByUsername(users.getUsername());
-        String password = BCrypt.hashpw(users.getPassword(), "$2a$10$Y2Cgsuie2spIjKHfwi8VL.");
-        if (find == null || find.getStatus() == 0 || !password.equals(find.getPassword())) {
+        Users find = usersMapper.findByUsername(username);
+        String decodedPassword = BCrypt.hashpw(password, "$2a$10$Y2Cgsuie2spIjKHfwi8VL.");
+        if (find == null || find.getStatus() == 0 || !decodedPassword.equals(find.getPassword())) {
             return false;
         }
         return true;

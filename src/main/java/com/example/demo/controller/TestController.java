@@ -1,6 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.auth.annotation.RequirePermission;
+import com.example.demo._shiro.annotation.RequirePermission;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.Result;
 import com.example.demo.entity.Users;

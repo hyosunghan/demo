@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.entity.Users;
-import com.example.demo.lock.annotation.RedisLock;
+import com.example.demo._lock.annotation.RedisLock;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

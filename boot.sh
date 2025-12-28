@@ -42,7 +42,7 @@ start(){
         echo "${APP_NAME} is running with pid: ${pid}."
     else
         # 启动应用程序
-        nohup java -Xms$XMX -Xmx$XMX -jar -Duser.timezone=Asia/Shanghai  target/$APP_NAME.jar --spring.profiles.active=dev > $APP_NAME.out 2>&1 &
+        nohup java -Xms$XMX -Xmx$XMX -jar -Duser.timezone=Asia/Shanghai  $APP_NAME.jar --spring.profiles.active=dev > $APP_NAME.out 2>&1 &
         echo "${APP_NAME} is starting..."
     fi
 }

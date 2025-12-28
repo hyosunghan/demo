@@ -1,5 +1,5 @@
 # 设置JDK
-FROM openjdk:8-jre-alpine
+FROM openjdk:8u102-jdk
 
 # 工作目录
 WORKDIR /app
@@ -9,6 +9,7 @@ COPY target/*.jar app.jar
 
 # 暴露端口
 EXPOSE 8081
+EXPOSE 8082
 
 # 启动应用
 ENTRYPOINT ["java", "-Xmx512m", "-Xms256m", "-jar", "app.jar"]

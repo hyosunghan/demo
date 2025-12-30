@@ -19,7 +19,7 @@ import com.example.demo.utils.BitPermission;
 import com.example.demo.utils.JsonUtil;
 import com.example.demo.utils.MyInvocationHandler;
 import com.example.demo.utils.RestUtil;
-import com.example.demo.utils.SnowFlakeIdentity;
+import com.example.demo._snowFlake.SnowFlakeIdentity;
 import com.example.demo.utils.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
@@ -77,7 +77,6 @@ public class DemoServiceRunner implements ApplicationRunner {
 
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
-		String filePath = "/Users/hanxiaoxing/mydata/test.txt";
 		scannerCustomInfo();
 		consoleEnvironment();
 //		testSpringUtil();
@@ -88,6 +87,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 //		testJsonUtil();
 //		testSnowFlakeIdentity();
 //		testRedisLock();
+//		String filePath = "/Users/hanxiaoxing/mydata/test.txt";
 //		testMockTestFile(filePath, 1000001);
 //		testWriteFileToTable(filePath);
 //		testElasticsearch();
@@ -103,7 +103,6 @@ public class DemoServiceRunner implements ApplicationRunner {
 
 	private void testSnowFlakeIdentity() {
 		log.info("-----------------------------------------------------------测试雪花算法");
-		SnowFlakeIdentity.machineNumber = 1;
 		long l = SnowFlakeIdentity.getInstance().nextId();
 		log.info("生成id为：{}", l);
 	}

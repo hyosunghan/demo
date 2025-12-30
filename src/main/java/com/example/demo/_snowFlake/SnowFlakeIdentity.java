@@ -1,7 +1,13 @@
-package com.example.demo.utils;
+package com.example.demo._snowFlake;
 
 import java.time.Instant;
 
+/**
+ * 雪花算法
+ *
+ * 64位ID: 1标记位 39位时间位 15位机器码 9位序列号
+ * 1 111111111111111111111111111111111111111 111111111111111 111111111
+ */
 public class SnowFlakeIdentity {
 
     /**
@@ -24,27 +30,22 @@ public class SnowFlakeIdentity {
      */
     private static final long MAX_SEQUENCE = ~(-1L << SEQUENCE_BITS);
 
-    /**
-     * 最大机器码:32767(该算法可计算固定位数的二进制所能表达的最大十进制数)
-     */
-    public static final long MAX_MACHINE_NUMBER = ~(-1L << MACHINE_NUMBER_BITS);
-
     private static SnowFlakeIdentity instance;
 
     /**
-     * 机器码（由业务服务初始化）
+     * 机器码
      */
     public static int machineNumber = -1;
 
     /**
      * 历史时间戳，默认从当前开始，后续自增
      */
-    private long pastTimeStamp = System.currentTimeMillis();
+    private static long pastTimeStamp = System.currentTimeMillis();
 
     /**
      * 当前序列号，默认从0开始，后续自增
      */
-    private long currentSequence = 0;
+    private static long currentSequence = 0;
 
 
     private SnowFlakeIdentity() {

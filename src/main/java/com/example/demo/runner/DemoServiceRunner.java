@@ -19,7 +19,7 @@ import com.example.demo.utils.BitPermission;
 import com.example.demo.utils.JsonUtil;
 import com.example.demo.utils.MyInvocationHandler;
 import com.example.demo.utils.RestUtil;
-import com.example.demo._snowFlake.SnowFlakeIdentity;
+import com.example.demo._identity.SnowFlakeIdentity;
 import com.example.demo.utils.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;

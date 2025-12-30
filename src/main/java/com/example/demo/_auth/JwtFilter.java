@@ -1,4 +1,4 @@
-package com.example.demo._shiro;
+package com.example.demo._auth;
 
 import com.example.demo.dto.Result;
 import com.example.demo.utils.JsonUtil;

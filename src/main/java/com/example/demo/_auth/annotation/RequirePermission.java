@@ -1,4 +1,4 @@
-package com.example.demo._shiro.annotation;
+package com.example.demo._auth.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

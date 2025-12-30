@@ -1,7 +1,7 @@
 package com.example.demo.config;
 
-import com.example.demo._shiro.JwtFilter;
-import com.example.demo._shiro.JwtRealm;
+import com.example.demo._auth.JwtFilter;
+import com.example.demo._auth.JwtRealm;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;

@@ -1,4 +1,4 @@
-package com.example.demo._shiro;
+package com.example.demo._auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

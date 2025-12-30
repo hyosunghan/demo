@@ -1,4 +1,4 @@
-package com.example.demo._snowFlake;
+package com.example.demo._identity;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

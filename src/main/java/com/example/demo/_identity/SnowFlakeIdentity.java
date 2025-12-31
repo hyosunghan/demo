@@ -5,28 +5,28 @@ import java.time.Instant;
 /**
  * 雪花算法
  *
- * 64位ID: 1标记位 39位时间位 15位机器码 9位序列号
- * 1 111111111111111111111111111111111111111 111111111111111 111111111
+ * 64位ID: 1标记位 41位时间位 11位机器码 11位序列号
+ * 1 11111111111111111111111111111111111111111 11111111111 11111111111
  */
 public class SnowFlakeIdentity {
 
     /**
-     * 时间戳基准值2025-01-01T00:00:00.000Z，时间戳截止值2042-06-03T21:56:53.887Z
+     * 时间戳基准值2025-01-01T00:00:00.000Z，时间戳截止值2094-09-07T15:47:35.551Z
      */
     private static final long TIMESTAMP_DATUM = Instant.parse("2025-01-01T00:00:00.000Z").toEpochMilli();
 
     /**
      * 序列号位数
      */
-    private static final int SEQUENCE_BITS = 9;
+    private static final int SEQUENCE_BITS = 11;
 
     /**
      * 机器码位数
      */
-    private static final int MACHINE_NUMBER_BITS = 15;
+    private static final int MACHINE_NUMBER_BITS = 11;
 
     /**
-     * 最大序列号:511(该算法可计算固定位数的二进制所能表达的最大十进制数)
+     * 最大序列号:2047(该算法可计算固定位数的二进制所能表达的最大十进制数)
      */
     private static final long MAX_SEQUENCE = ~(-1L << SEQUENCE_BITS);
 

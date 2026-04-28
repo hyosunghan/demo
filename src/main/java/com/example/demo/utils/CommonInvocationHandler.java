@@ -2,10 +2,9 @@ package com.example.demo.utils;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.function.Consumer;
 
-public class MyInvocationHandler implements InvocationHandler {
+public class CommonInvocationHandler implements InvocationHandler {
 
     private Object target;
 
@@ -13,7 +12,7 @@ public class MyInvocationHandler implements InvocationHandler {
 
     private Consumer<Method> after;
 
-    public MyInvocationHandler(Object target, Consumer<Method> before, Consumer<Method> after) {
+    public CommonInvocationHandler(Object target, Consumer<Method> before, Consumer<Method> after) {
         this.target = target;
         this.before = before;
         this.after = after;
@@ -25,12 +24,5 @@ public class MyInvocationHandler implements InvocationHandler {
         Object result = method.invoke(target, args);
         after.accept(method);
         return result;
-    }
-
-    public static Object getProxy(Object o, Consumer<Method> before, Consumer<Method> after) {
-        Class<?> clazz = o.getClass();
-        return Proxy.newProxyInstance(clazz.getClassLoader(),
-                clazz.getInterfaces(),
-                new MyInvocationHandler(o, before, after));
     }
 }

@@ -17,7 +17,7 @@ import com.example.demo.service.TestService;
 import com.example.demo.service.TestServiceImpl;
 import com.example.demo.utils.BitPermission;
 import com.example.demo.utils.JsonUtil;
-import com.example.demo.utils.MyInvocationHandler;
+import com.example.demo.utils.CommonInvocationHandler;
 import com.example.demo.utils.RestUtil;
 import com.example.demo._identity.SnowFlakeIdentity;
 import com.example.demo.utils.SpringUtil;
@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -81,7 +82,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 		consoleEnvironment();
 //		testSpringUtil();
 //		testBitPermission();
-//		testMyInvocationHandler();
+//		testInvocationHandler();
 //		testQuickSort();
 //		testRestUtil();
 //		testJsonUtil();
@@ -121,14 +122,19 @@ public class DemoServiceRunner implements ApplicationRunner {
 		log.info("请求结果为: {}", s);
 	}
 
-	private void testMyInvocationHandler() {
+	private void testInvocationHandler() {
 		log.info("-----------------------------------------------------------测试动态代理");
 		TestService testService = new TestServiceImpl();
 		testService.testProxy();
 
-		TestService proxyService = (TestService) MyInvocationHandler.getProxy(testService,
-				method -> System.out.println("对象方法执行前" + method.getName()),
-				method -> System.out.println("对象方法执行后" + method.getName()));
+		TestService proxyService = (TestService) Proxy.newProxyInstance(
+				testService.getClass().getClassLoader(),
+				testService.getClass().getInterfaces(),
+				new CommonInvocationHandler(testService,
+						method -> System.out.println("对象方法执行前" + method.getName()),
+						method -> System.out.println("对象方法执行后" + method.getName())
+				)
+		);
 		proxyService.testProxy();
 	}
 

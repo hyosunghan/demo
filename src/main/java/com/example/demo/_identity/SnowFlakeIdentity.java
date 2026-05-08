@@ -58,7 +58,7 @@ public class SnowFlakeIdentity {
                 if (instance == null) {       // 这里的检测避免多线程并发时多次创建对象
                     if (machineNumber < 0) {
                         // 机器码未初始化，不能生成正确的机器码
-                        throw new IllegalStateException("Please wait machine number allot.");
+                        throw new IllegalStateException("Please allot valid machine number.");
                     }
                     instance = new SnowFlakeIdentity();
                 }

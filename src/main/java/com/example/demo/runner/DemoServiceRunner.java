@@ -99,7 +99,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 		log.info("-----------------------------------------------------------测试RedisLock");
 		Users users = new Users(1L, "张三", "123456", "12345678901", new Date(), 1);
 		new Thread(()-> testService.testLock(1L, users)).start();
-		testService.testLock(1L, users);
+		new Thread(()-> testService.testLock(1L, users)).start();
 	}
 
 	private void testSnowFlakeIdentity() {

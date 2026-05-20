@@ -33,7 +33,7 @@ public @interface RedisLock {
      * 每秒尝试次数
      * @return
      */
-    int frequency() default 2;
+    int frequency() default 1;
 
     /**
      * 自定义业务key，spring EL 表达式形式，获取方法参数对应的值

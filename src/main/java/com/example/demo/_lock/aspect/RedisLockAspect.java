@@ -45,10 +45,12 @@ public class RedisLockAspect {
             Long.class
     );
 
-    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, r -> {
+    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
+            Runtime.getRuntime().availableProcessors() * 2,
+            r -> {
         Thread thread = new Thread(r);
         thread.setDaemon(true);
-        thread.setName("redis-lock-renewal");
+        thread.setName("RedisLockRenewal-" + thread.getId());
         return thread;
     });
 
@@ -70,7 +72,7 @@ public class RedisLockAspect {
         int leaseTime = redisLock.leaseTime();
         boolean locked = waitingLock(lockName, lockValue, leaseTime, redisLock.waitTime(), redisLock.frequency());
         if (!locked) {
-            throw new IllegalStateException("redis lock [" + lockName + "] getting failure.");
+            throw new IllegalStateException("Redis lock [" + lockName + "] getting failure.");
         }
         try {
             scheduledFuture = scheduler.scheduleAtFixedRate(() -> renewalLock(lockName, lockValue, leaseTime),

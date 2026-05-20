@@ -100,6 +100,12 @@ public class DemoServiceRunner implements ApplicationRunner {
 		Users users = new Users(1L, "张三", "123456", "12345678901", new Date(), 1);
 		new Thread(()-> testService.testLock(1L, users)).start();
 		new Thread(()-> testService.testLock(1L, users)).start();
+
+		new Thread(()-> testService.testLock(2L, users)).start();
+		new Thread(()-> testService.testLock(2L, users)).start();
+
+		new Thread(()-> testService.testLock(3L, users)).start();
+		new Thread(()-> testService.testLock(3L, users)).start();
 	}
 
 	private void testSnowFlakeIdentity() {

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Date;
 import java.util.HashMap;
 
 @RestController
@@ -66,10 +67,15 @@ public class TestController {
     @GetMapping("/lock")
     @RequirePermission("user:add")
     public Object lock() {
-        Users users = new Users();
-        users.setUsername("张三");
+        Users users = new Users(1L, "张三", "123456", "12345678901", new Date(), 1);
         new Thread(()-> testService.testLock(1L, users)).start();
         new Thread(()-> testService.testLock(1L, users)).start();
+
+        new Thread(()-> testService.testLock(2L, users)).start();
+        new Thread(()-> testService.testLock(2L, users)).start();
+
+        new Thread(()-> testService.testLock(3L, users)).start();
+        new Thread(()-> testService.testLock(3L, users)).start();
         return users;
     }
 

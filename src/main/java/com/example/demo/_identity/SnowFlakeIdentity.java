@@ -54,10 +54,9 @@ public class SnowFlakeIdentity {
 
     public static SnowFlakeIdentity getInstance() {
         if (instance == null) {
-            synchronized(SnowFlakeIdentity.class) { // 注意这里是类级别的锁
-                if (instance == null) {       // 这里的检测避免多线程并发时多次创建对象
+            synchronized(SnowFlakeIdentity.class) {
+                if (instance == null) {
                     if (machineNumber < 0) {
-                        // 机器码未初始化，不能生成正确的机器码
                         throw new IllegalStateException("Please allot valid machine number.");
                     }
                     instance = new SnowFlakeIdentity();

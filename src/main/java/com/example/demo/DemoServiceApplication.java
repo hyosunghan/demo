@@ -9,8 +9,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class DemoServiceApplication {
 
 	public static void main(String[] args) {
-		System.setProperty("JM.LOG.PATH", "logs/nacos");
-		System.setProperty("JM.SNAPSHOT.PATH", "logs/nacos");
+		// 设置nacos日志及缓存路径
+		System.setProperty("JM.LOG.PATH", "logs");
+		System.setProperty("JM.SNAPSHOT.PATH", "logs");
+
 		SpringApplication.run(DemoServiceApplication.class, args);
 	}
 }

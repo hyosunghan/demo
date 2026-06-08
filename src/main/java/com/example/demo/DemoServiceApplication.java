@@ -12,7 +12,7 @@ public class DemoServiceApplication {
 		// 设置nacos日志及缓存路径
 		System.setProperty("JM.LOG.PATH", "logs");
 		System.setProperty("JM.SNAPSHOT.PATH", "logs");
-
+		// 启动服务
 		SpringApplication.run(DemoServiceApplication.class, args);
 	}
 }

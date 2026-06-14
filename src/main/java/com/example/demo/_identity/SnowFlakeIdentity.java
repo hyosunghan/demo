@@ -1,5 +1,6 @@
 package com.example.demo._identity;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +13,7 @@ import java.time.Instant;
  * 64位ID: 1标记位 41位时间位 11位机器码 11位序列号
  * 1 11111111111111111111111111111111111111111 11111111111 11111111111
  */
+@Slf4j
 @Component
 public class SnowFlakeIdentity {
 
@@ -35,47 +37,31 @@ public class SnowFlakeIdentity {
      */
     private static final long MAX_SEQUENCE = ~(-1L << SEQUENCE_BITS);
 
-    private static SnowFlakeIdentity instance;
-
-    /**
-     * 机器码
-     */
-    public static int machineNumber = -1;
-
     /**
      * 历史时间戳，默认从当前开始，后续自增
      */
-    private static long pastTimeStamp = System.currentTimeMillis();
+    private long pastTimeStamp = System.currentTimeMillis();
 
     /**
      * 当前序列号，默认从0开始，后续自增
      */
-    private static long currentSequence = 0;
+    private long currentSequence = 0;
 
-    @Value("${system.node-id:-1}")
+    @Value("${system.node-id:1}")
     private int nodeId;
+
+    @Value("${snowflake.clock.rollback.limit:5000}")
+    private int clockRollbackLimit;
 
     @PostConstruct
     public void init() {
-        if (nodeId < 0) {
-            throw new IllegalStateException("Please allot valid node id.");
-        }
-        machineNumber = nodeId;
+        if (nodeId < 1 || nodeId > MAX_SEQUENCE) {
+            throw new IllegalStateException(
+                    String.format("Node id must be between 1 and %d, got: %d", MAX_SEQUENCE, nodeId));        }
     }
 
     private SnowFlakeIdentity() {
 
-    }
-
-    public static SnowFlakeIdentity getInstance() {
-        if (instance == null) {
-            synchronized(SnowFlakeIdentity.class) {
-                if (instance == null) {
-                    instance = new SnowFlakeIdentity();
-                }
-            }
-        }
-        return instance;
     }
 
     /**
@@ -84,15 +70,35 @@ public class SnowFlakeIdentity {
      * @return  nextId
      */
     public synchronized long nextId() {
+        // 序列号重置及历史时间戳维护
         if (currentSequence > MAX_SEQUENCE) {
             pastTimeStamp++;
             currentSequence = 0;
         }
-        while (pastTimeStamp >= System.currentTimeMillis()) {
-            // wait time go
-        }
+        // 历史事件戳有效性检查
+        long currentTimeStamp;
+        do {
+            currentTimeStamp = System.currentTimeMillis();
+            // 1. 历史时间戳小于当前时间戳，服务正常
+            if (pastTimeStamp < currentTimeStamp) {
+                break;
+            }
+            // 2. 发生时钟回拨，且回拨时间超过积攒的历史时间戳超过配置时间
+            if (pastTimeStamp - currentTimeStamp > clockRollbackLimit) {
+                log.error("snowflake clock rollback detected limit {}, service is unavailable.", clockRollbackLimit);
+                throw new IllegalStateException("Large-scale clock rollback detected, service is unavailable.");
+            }
+            // 3. ID生成速率从该类初始化开始一直超满载生成，此时，服务会阻塞1毫秒继续
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        } while (true);
+        // 生成ID
         return (pastTimeStamp - TIMESTAMP_DATUM) << MACHINE_NUMBER_BITS << SEQUENCE_BITS
                 | currentSequence++ << MACHINE_NUMBER_BITS
-                | machineNumber;
+                | nodeId;
     }
 }

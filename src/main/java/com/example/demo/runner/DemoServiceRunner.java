@@ -95,7 +95,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 
 	private void testSnowFlakeIdentity() {
 		log.info("-----------------------------------------------------------测试雪花算法");
-		long l = SnowFlakeIdentity.getInstance().nextId();
+		long l = SpringUtil.getBean(SnowFlakeIdentity.class).nextId();
 		log.info("生成id为：{}", l);
 	}
 

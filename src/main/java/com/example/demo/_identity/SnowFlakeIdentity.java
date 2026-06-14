@@ -88,7 +88,7 @@ public class SnowFlakeIdentity {
                 log.error("snowflake clock rollback detected limit {}, service is unavailable.", clockRollbackLimit);
                 throw new IllegalStateException("Large-scale clock rollback detected, service is unavailable.");
             }
-            // 3. ID生成速率从该类初始化开始一直超满载生成，此时，服务会阻塞1毫秒继续
+            // 3. 发生时钟回拨且回拨时间小于配置时间，或者ID生成速率从该类初始化开始一直超满载生成，服务等待继续
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {

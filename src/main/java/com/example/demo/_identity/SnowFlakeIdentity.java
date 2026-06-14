@@ -1,5 +1,9 @@
 package com.example.demo._identity;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
 import java.time.Instant;
 
 /**
@@ -8,6 +12,7 @@ import java.time.Instant;
  * 64位ID: 1标记位 41位时间位 11位机器码 11位序列号
  * 1 11111111111111111111111111111111111111111 11111111111 11111111111
  */
+@Component
 public class SnowFlakeIdentity {
 
     /**
@@ -47,6 +52,16 @@ public class SnowFlakeIdentity {
      */
     private static long currentSequence = 0;
 
+    @Value("${system.node-id:-1}")
+    private int nodeId;
+
+    @PostConstruct
+    public void init() {
+        if (nodeId < 0) {
+            throw new IllegalStateException("Please allot valid node id.");
+        }
+        machineNumber = nodeId;
+    }
 
     private SnowFlakeIdentity() {
 
@@ -56,9 +71,6 @@ public class SnowFlakeIdentity {
         if (instance == null) {
             synchronized(SnowFlakeIdentity.class) {
                 if (instance == null) {
-                    if (machineNumber < 0) {
-                        throw new IllegalStateException("Please allot valid machine number.");
-                    }
                     instance = new SnowFlakeIdentity();
                 }
             }

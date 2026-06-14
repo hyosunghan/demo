@@ -86,7 +86,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 //		testQuickSort();
 //		testRestUtil();
 //		testJsonUtil();
-//		testSnowFlakeIdentity();
+		testSnowFlakeIdentity();
 //		String filePath = "/Users/hanxiaoxing/mydata/test.txt";
 //		testMockTestFile(filePath, 1000001);
 //		testWriteFileToTable(filePath);

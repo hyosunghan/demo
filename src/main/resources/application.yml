@@ -1,0 +1,66 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /
+spring:
+  application:
+    name: demo
+  profiles:
+    active: dev
+  datasource:
+    schema: classpath*:db/schema.sql
+    data: classpath*:db/data.sql
+    initialization-mode: always # always,never,embedded
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.3.21:3306/demo_spring_cloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowLoadLocalInfile=true
+    username: root
+    password: root
+  redis:
+    host: 192.168.3.21
+    port: 6379
+    password: root
+  mvc:
+    throw-exception-if-no-handler-found: true
+  messages:
+    basename: messages
+    encoding: UTF-8
+
+# es配置
+elasticsearch:
+    host: 192.168.3.21
+    port: 9200
+    scheme: http
+    username: elastic
+    password: elastic
+
+# health配置
+management:
+  endpoints:
+    shutdown:
+      enabled: true
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  server:
+    port: 8082
+    servlet:
+      context-path: /monitor
+
+# mybatis配置
+mybatis:
+  type-aliases-package: com.example.demo.entity
+  mapper-locations: classpath:mapper/*.xml
+
+# 线程池配置
+task:
+  executor:
+    pool:
+      size: 10
+    queue:
+      size: 10000
+
+system:
+  node-id: 1

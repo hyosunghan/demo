@@ -62,5 +62,9 @@ task:
     queue:
       size: 10000
 
-system:
-  node-id: 1
+# 雪花算法
+snowflake:
+  node-id: 1 # 节点编号
+  clock:
+    rollback:
+      limit: 5000 # 允许最大的时钟回拨的时间，单位：毫秒

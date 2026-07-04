@@ -38,7 +38,7 @@ public class SnowFlakeIdentity {
      */
     private long currentSequence = 0;
 
-    @Value("${system.node-id:1}")
+    @Value("${snowflake.node-id:1}")
     private int nodeId;
 
     @Value("${snowflake.clock.rollback.limit:5000}")

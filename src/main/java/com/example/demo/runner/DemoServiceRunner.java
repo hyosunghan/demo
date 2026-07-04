@@ -76,6 +76,9 @@ public class DemoServiceRunner implements ApplicationRunner {
 	@Autowired
 	private DataSource dataSource;
 
+	@Autowired
+	private SnowFlakeIdentity snowFlakeIdentity;
+
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		scannerCustomInfo();
@@ -95,7 +98,7 @@ public class DemoServiceRunner implements ApplicationRunner {
 
 	private void testSnowFlakeIdentity() {
 		log.info("-----------------------------------------------------------测试雪花算法");
-		long l = SpringUtil.getBean(SnowFlakeIdentity.class).nextId();
+		long l = snowFlakeIdentity.nextId();
 		log.info("生成id为：{}", l);
 	}
 

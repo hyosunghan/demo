@@ -32,13 +32,19 @@ usage() {
   --                其后的参数原样传给 Spring Boot
 
 环境变量:
-  JAVA8_HOME        指定 JDK 8 路径
+  JAVA_VERSION      强制指定 Java 主版本，如 8、11、17
+  JAVA_HOME         优先使用的 JDK 路径（版本需与项目要求一致）
   JAVA_OPTS         JVM 参数，默认 "$JAVA_OPTS"
   STOP_TIMEOUT      优雅停机等待秒数，默认 30
   APP_NAME          应用名，决定 PID 和日志文件名
 
+Java 版本读取顺序:
+  JAVA_VERSION > .java-version > .sdkmanrc > .tool-versions > pom.xml
+  未读取到版本时，使用 JAVA_HOME 或 PATH 中的 java。
+
 示例:
   ./run.sh build
+  JAVA_VERSION=8 ./run.sh build
   ./run.sh run
   ./run.sh run --skip-build --spring.profiles.active=dev
   ./run.sh start
@@ -49,35 +55,73 @@ usage() {
 EOF
 }
 
-java_major() {
-  "$1/bin/java" -version 2>&1 | awk -F'"' '/version/ {print $2}' | awk -F. '{if ($1 == "1") print $2; else print $1}'
+normalize_major() {
+  local v
+  v="$(printf '%s\n' "$1" | grep -Eo '(^|[-_])[0-9]+(\.[0-9]+)*' | head -n 1 | sed 's/^[-_]//')"
+  if [ -z "$v" ]; then
+    return 1
+  fi
+  case "$v" in
+    1.*)
+      v="${v#1.}"
+      v="${v%%.*}"
+      ;;
+    *)
+      v="${v%%.*}"
+      ;;
+  esac
+  case "$v" in
+    ''|*[!0-9]*) return 1 ;;
+  esac
+  echo "$v"
 }
 
-find_jdk8() {
-  if [ -n "${JAVA8_HOME:-}" ] && [ -x "$JAVA8_HOME/bin/java" ] && [ "$(java_major "$JAVA8_HOME")" = "8" ]; then
-    echo "$JAVA8_HOME"
+java_major() {
+  local v
+  v="$("$1/bin/java" -version 2>&1 | awk -F'"' '/version/ {print $2; exit}')"
+  normalize_major "$v"
+}
+
+jdk_major_is() {
+  local home="${1:-}" expected="$2" actual
+  [ -n "$home" ] && [ -x "$home/bin/java" ] || return 1
+  actual="$(java_major "$home" 2>/dev/null || true)"
+  [ "$actual" = "$expected" ]
+}
+
+find_jdk_for_version() {
+  local required="$1" d home lookup
+  if jdk_major_is "${JAVA_HOME:-}" "$required"; then
+    echo "$JAVA_HOME"
     return 0
   fi
-  local d
-  for d in "$HOME"/.sdkman/candidates/java/8* /Library/Java/JavaVirtualMachines/*/Contents/Home; do
-    if [ -x "$d/bin/java" ] && [ "$(java_major "$d")" = "8" ]; then
+  for d in \
+    "$HOME"/.sdkman/candidates/java/* \
+    "$HOME"/.jdks/* \
+    "$HOME"/Library/Java/JavaVirtualMachines/*/Contents/Home \
+    /Library/Java/JavaVirtualMachines/*/Contents/Home \
+    /usr/lib/jvm/* \
+    /opt/homebrew/opt/openjdk*/libexec/openjdk.jdk/Contents/Home \
+    /usr/local/opt/openjdk*/libexec/openjdk.jdk/Contents/Home; do
+    if jdk_major_is "$d" "$required"; then
       echo "$d"
       return 0
     fi
   done
-  local home
-  home="$(/usr/libexec/java_home -v 1.8 2>/dev/null || true)"
-  if [ -n "$home" ] && [ -x "$home/bin/java" ]; then
-    echo "$home"
-    return 0
+  lookup="$required"
+  if [ "$required" = "8" ]; then
+    lookup="1.8"
   fi
-  if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ] && [ "$(java_major "$JAVA_HOME")" = "8" ]; then
-    echo "$JAVA_HOME"
-    return 0
+  if [ -x /usr/libexec/java_home ]; then
+    home="$(/usr/libexec/java_home -v "$lookup" 2>/dev/null || true)"
+    if jdk_major_is "$home" "$required"; then
+      echo "$home"
+      return 0
+    fi
   fi
   if command -v java >/dev/null 2>&1; then
     home="$(java -XshowSettings:properties -version 2>&1 | awk -F'= ' '/java.home =/ {print $2; exit}')"
-    if [ -n "$home" ] && [ -x "$home/bin/java" ] && [ "$(java_major "$home")" = "8" ]; then
+    if jdk_major_is "$home" "$required"; then
       echo "$home"
       return 0
     fi
@@ -85,14 +129,104 @@ find_jdk8() {
   return 1
 }
 
-setup_java() {
-  if ! JDK8_HOME="$(find_jdk8)"; then
-    echo "错误: 未找到 JDK 8。本项目使用 Lombok 1.16.20，无法用 JDK 17 编译。" >&2
-    echo "请安装 JDK 8，或通过 JAVA8_HOME=/path/to/jdk8 指定。" >&2
-    exit 1
+find_any_jdk() {
+  local home
+  if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+    echo "$JAVA_HOME"
+    return 0
   fi
-  export JAVA_HOME="$JDK8_HOME"
+  if command -v java >/dev/null 2>&1; then
+    home="$(java -XshowSettings:properties -version 2>&1 | awk -F'= ' '/java.home =/ {print $2; exit}')"
+    if [ -n "$home" ] && [ -x "$home/bin/java" ]; then
+      echo "$home"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+pom_property() {
+  local tag="$1"
+  [ -f "$PROJECT_DIR/pom.xml" ] || return 1
+  awk -v tag="$tag" '
+    index($0, "<" tag ">") {
+      line = $0
+      sub(".*<" tag ">", "", line)
+      sub("</" tag ">.*", "", line)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+      print line
+      exit
+    }
+  ' "$PROJECT_DIR/pom.xml"
+}
+
+detect_java_version() {
+  local v tag
+  if [ -f "$PROJECT_DIR/.java-version" ]; then
+    v="$(awk 'NF && $1 !~ /^#/ {print $1; exit}' "$PROJECT_DIR/.java-version")"
+    if [ -n "$v" ] && v="$(normalize_major "$v")"; then
+      echo "$v"
+      return 0
+    fi
+  fi
+  if [ -f "$PROJECT_DIR/.sdkmanrc" ]; then
+    v="$(awk -F= '/^[[:space:]]*java[[:space:]]*=/{gsub(/[[:space:]]/,"",$2); print $2; exit}' "$PROJECT_DIR/.sdkmanrc")"
+    if [ -n "$v" ] && v="$(normalize_major "$v")"; then
+      echo "$v"
+      return 0
+    fi
+  fi
+  if [ -f "$PROJECT_DIR/.tool-versions" ]; then
+    v="$(awk '$1 == "java" {print $2; exit}' "$PROJECT_DIR/.tool-versions")"
+    if [ -n "$v" ] && v="$(normalize_major "$v")"; then
+      echo "$v"
+      return 0
+    fi
+  fi
+  for tag in java.version maven.compiler.release maven.compiler.source maven.compiler.target; do
+    v="$(pom_property "$tag" || true)"
+    if [ -z "$v" ]; then
+      continue
+    fi
+    case "$v" in
+      *'${'*) continue ;;
+    esac
+    if v="$(normalize_major "$v")"; then
+      echo "$v"
+      return 0
+    fi
+  done
+  return 1
+}
+
+setup_java() {
+  local required home
+  if [ -n "${JAVA_VERSION:-}" ]; then
+    if ! required="$(normalize_major "$JAVA_VERSION")"; then
+      echo "错误: JAVA_VERSION 格式无效: $JAVA_VERSION" >&2
+      exit 1
+    fi
+  else
+    required="$(detect_java_version || true)"
+  fi
+
+  if [ -n "$required" ]; then
+    if ! home="$(find_jdk_for_version "$required")"; then
+      echo "错误: 项目要求 JDK $required，但本机未找到。" >&2
+      echo "请安装 JDK $required，或设置 JAVA_HOME 指向对应版本。" >&2
+      exit 1
+    fi
+  else
+    if ! home="$(find_any_jdk)"; then
+      echo "错误: 未找到可用的 JDK，请设置 JAVA_HOME。" >&2
+      exit 1
+    fi
+    echo "==> 项目未配置 Java 版本，使用当前 JDK: $home"
+  fi
+
+  export JAVA_HOME="$home"
   export PATH="$JAVA_HOME/bin:$PATH"
+  echo "==> 使用 JDK $(java_major "$JAVA_HOME"): $JAVA_HOME"
 }
 
 setup_maven() {
@@ -131,7 +265,7 @@ find_jar() {
 }
 
 build_app() {
-  echo "==> 使用 JDK 8 ($JAVA_HOME) 编译项目"
+  echo "==> 编译项目"
   "$MVN" -B -DskipTests clean package "$@"
 }
 
